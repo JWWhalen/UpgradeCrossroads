@@ -113,4 +113,5 @@ jobs:
         with:
           name: UpgradeCrossroads-release-package
           path: .release/*-forever.zip
+          include-hidden-files: true
           if-no-files-found: error
