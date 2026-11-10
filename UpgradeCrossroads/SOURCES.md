@@ -95,3 +95,50 @@ The generator now validates reviewed source hashes from research/source-lock.jso
 and reads the actual upstream generated snapshot date. tools/refresh_source.py
 can stage an explicitly reviewed commit/date before a rebuild. A newer commit
 with the same old snapshot is not presented as new game data.
+
+# Class/spec profile design (v0.5.3)
+
+The 29 manual class/spec choices are based on the nine classes' talent-tree
+identities, with separate Survival melee/ranged and Feral cat/bear playstyles.
+Class identity comes from the live client's UnitClass; talent allocation is not
+read or simulated. The spec selector does not imply automatic talent detection.
+
+Primary mechanic references inspected on 2026-11-10:
+
+- Blizzard Hunter and Druid class deep dive:
+  https://news.blizzard.com/en-us/article/24301515/world-of-warcraft-forever-class-deep-dives-hunter-and-druid
+  Supports Beast Mastery, Marksmanship and Survival; Survival combines melee,
+  trap and ranged options. Describes equipped weapon DPS being used for Feral
+  cat/bear autoattacks and weapon-damage abilities in Forever. Accordingly,
+  both Feral presets include main-hand weapon DPS rather than Classic Era's
+  old stat-stick-only assumption. It does not validate numerical stat weights.
+- Blizzard Mage and Shaman class deep dive:
+  https://news.blizzard.com/en-us/article/24302097/world-of-warcraft-forever-class-deep-dives-mage-and-shaman
+  Describes Arcane/Fire/Frost and Elemental/Enhancement/Restoration identities.
+- Blizzard Paladin class deep dive:
+  https://news.blizzard.com/en-us/article/24302099/world-of-warcraft-forever-class-deep-dives-paladin
+  Describes Holy healing/spell options, Protection and Retribution. The starter
+  Holy choice scores healing; hybrid Shockadin damage is not simulated.
+- Blizzard Rogue and Warlock class deep dive:
+  https://news.blizzard.com/en-us/article/24310968/world-of-warcraft-forever-class-deep-dives-rogue-and-warlock
+  Describes Assassination/Combat/Subtlety and Affliction/Demonology/Destruction.
+- Blizzard Priest and Warrior class deep dive:
+  https://worldofwarcraft.blizzard.com/en-us/news/24301514/
+  Identifies Discipline/Holy/Shadow and Arms/Fury/Protection. Direct retrieval
+  was restricted during this review; class identities are not stat-weight evidence.
+
+All numerical starter weights are Upgrade Crossroads' existing heuristic role
+weights, not copied guide rankings, published simulations or validated damage
+coefficients. Same-role specs intentionally share defaults. Each spec can save
+independent custom weights. Descriptions call out unmodeled talents, procs,
+weapon speed, school effects and other limitations. A named spec is a convenient
+selection and customization key, not a promise that its score models every build.
+
+The Hunter thrown-weapon exclusion applies to ranged recommendations. It does
+not modify equipped gear or assert that every class-compatible weapon is trained
+or appropriate for every build. Weapon DPS contributes only in each selected
+playstyle's designated attack slots; this avoids scoring ranged Hunter melee
+stat sticks as if they were the Hunter's shot weapon.
+
+These changes do not refresh Catalog.lua: its underlying snapshot remains
+2026-10-13 with the Forever/Classic coverage limitations recorded above.

@@ -33,6 +33,12 @@ function Rules.Usable(item, context, slot)
     if not contains(slot.inv,item.inv) then return false,"Wrong slot" end
     if not maskAllows(item.classMask,context.classID) then return false,"Class restriction" end
     if item.classID==2 and not contains(weaponSkills[context.class],item.subclassID) then return false,"Weapon type" end
+    -- Recommendation eligibility is stricter than merely being able to equip
+    -- an item: thrown weapons do not replace a Hunter's shot weapon.
+    if slot.id==18 and context.class=="HUNTER" and item.classID==2
+        and item.subclassID~=2 and item.subclassID~=3 and item.subclassID~=18 then
+        return false,"Hunter shot weapon"
+    end
     if slot.id==17 and item.classID==2 and not dual[context.class] then return false,"No dual wield" end
     if item.inv==14 and not shield[context.class] then return false,"Shield restriction" end
     if item.classID==4 then
@@ -47,15 +53,20 @@ function Rules.Usable(item, context, slot)
     if slot.id==17 and context.mainTwoHand then return false,"Two-handed weapon equipped" end
     return true
 end
-function Rules.Score(item,weights,slotID)
+function Rules.Score(item,weights,slotID,weaponDpsSlots)
     if not item or not item.stats then return nil end
     local total=0
     for key,weight in pairs(weights) do
         local use=true
         if key=="dps" then
             use=item.classID==2
-            if slotID==18 and weights.rap==nil then use=false end
-            if slotID~=18 and weights.rap then use=false end
+            if weaponDpsSlots then
+                use=use and weaponDpsSlots[slotID]==true
+            else
+                -- Legacy/custom callers retain their historical slot behavior.
+                if slotID==18 and weights.rap==nil then use=false end
+                if slotID~=18 and weights.rap then use=false end
+            end
         end
         if use then total=total+(item.stats[key] or 0)*weight end
     end
@@ -82,7 +93,7 @@ end
 function Rules.Build(catalog,context,options,slot,profile)
     local lanes={reliable={},dungeon={},longterm={}}
     local baseline=context.equipped and context.equipped[slot.id]
-    local baselineScore=Rules.Score(baseline,profile.weights,slot.id)
+    local baselineScore=Rules.Score(baseline,profile.weights,slot.id,profile.weaponDpsSlots)
     if not baseline and not (context.occupied and context.occupied[slot.id]) then baselineScore=0 end
     local function insert(lane,item,source,score,minLevel,delta)
         lanes[lane][#lanes[lane]+1]={item=item,source=source,score=score,delta=delta,baseline=baselineScore,minLevel=minLevel,locked=minLevel>context.level}
@@ -94,7 +105,7 @@ function Rules.Build(catalog,context,options,slot,profile)
         local usable=Rules.Usable(item,context,slot)
         local futureUsable=Rules.Usable(item,futureContext,slot)
         if futureUsable and not (context.worn and context.worn[item.id]) then
-            local score=Rules.Score(item,profile.weights,slot.id)
+            local score=Rules.Score(item,profile.weights,slot.id,profile.weaponDpsSlots)
             local comparable=baselineScore~=nil
             if slot.id==16 and baseline and ((baseline.inv==17)~=(item.inv==17)) then comparable=false end
             if baseline and baseline.incomplete then comparable=false end

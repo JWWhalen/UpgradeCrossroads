@@ -1,3 +1,18 @@
+v0.5.3
+- Replaced broad role labels with detected class and class-specific spec choices.
+- Added 29 manual choices across nine classes, including Survival melee/ranged
+  and Feral cat/bear playstyles. Spec choices do not read talent allocation.
+- Explained starter role-weight presets. Specs using the same role share default
+  weights; these are not guide-derived or simulated spec/BiS rankings.
+- Custom weights save separately per spec. Legacy selections and custom role
+  weights migrate while preserving spec overrides, hunts, notes and settings.
+- Excluded thrown weapons from Hunter ranged-slot recommendations and applied
+  class weapon compatibility to recommendations.
+- Weapon DPS follows the selected playstyle's attack slots; Feral main-hand DPS
+  is included according to Forever's form damage rule.
+- Bundled item data remains the October 13, 2026 snapshot.
+- Automated validation is documented separately; this update needs live testing.
+
 v0.5.2
 - Added the approved CurseForge project identifier.
 - Added automated release checks and tag-triggered CurseForge publishing.

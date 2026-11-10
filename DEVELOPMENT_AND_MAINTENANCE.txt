@@ -1,5 +1,5 @@
 UPGRADE CROSSROADS: BUILD, TEST, POLISH, PUBLISH AND MAINTAIN
-Windows beginner guide / development package v0.5.1
+Windows beginner guide / development package v0.5.3
 
 Read Part 1 through Part 4 first. That gives you a repeatable development loop
 and verifies the corrected tracking flow before any public release.
@@ -42,7 +42,7 @@ PART 1: MAKE A DEVELOPMENT FOLDER
 9. Choose File -> Open Folder and select C:\Dev\UpgradeCrossroads.
 10. The left Explorer panel should show UpgradeCrossroads, tools, tests and
     research as siblings. Open UpgradeCrossroads\Core\Bootstrap.lua and find
-    XC.version = "0.5.1". Do not change it yet.
+    XC.version = "0.5.3". Do not change it yet.
 
 Checkpoint: you can locate the addon folder and distinguish it from the
 development project. Do not edit only the installed game copy: the development
@@ -68,7 +68,7 @@ PART 2: SET UP THE LOCAL CHECKS ONCE
    .\.venv\Scripts\python.exe tests\run_tests.py
 
 7. Expect PASS lines and a final summary. For this delivered build there are
-   69 test groups. A traceback or nonzero exit means stop and investigate.
+   76 test groups. A traceback or nonzero exit means stop and investigate.
 8. Generate an offline layout preview:
 
    .\.venv\Scripts\python.exe tools\render_preview.py
@@ -95,9 +95,9 @@ PART 3: INSTALL YOUR DEVELOPMENT COPY
 5. Check that Interface\AddOns\UpgradeCrossroads\UpgradeCrossroads.toc exists.
    Avoid Interface\AddOns\UpgradeCrossroads\UpgradeCrossroads\... nesting.
 6. Start WoW, enable Upgrade Crossroads in the AddOns list, and enter the world.
-7. Run /uc status. Confirm that the addon reports v0.5.1 and the expected client.
+7. Run /uc status. Confirm that the addon reports v0.5.3 and the expected client.
 8. Open it with /uc or the minimap button.
-9. For your Mage, choose Caster. Choose a slot and compare the three paths.
+9. For your Mage, choose your Mage specialization. Choose a slot and compare the three paths.
 
 During development, edit the C:\Dev copy, run the tests, run Install-Dev.ps1
 again, then /reload in game for ordinary Lua changes. Fully restart the client
@@ -261,7 +261,7 @@ PART 8: BUILD AND PUBLISH A RELEASE
 
 1. Finish the live checks and commit the final source.
 2. Set the same version in UpgradeCrossroads.toc and Core\Bootstrap.lua.
-   Example: the next small bug-fix build after 0.5.1 can be 0.5.2.
+   Example: the next small bug-fix build after 0.5.3 can be 0.5.4.
 3. Write CHANGELOG.txt around resulting behavior and actual fixes. Record data
    changes separately from code changes. A code-only fix must not claim a
    refreshed catalog date.
@@ -271,17 +271,17 @@ PART 8: BUILD AND PUBLISH A RELEASE
    .\.venv\Scripts\python.exe tools\audit_catalog.py
    .\.venv\Scripts\python.exe tests\run_tests.py
    .\.venv\Scripts\python.exe tools\render_preview.py
-   .\.venv\Scripts\python.exe tools\package_release.py --tag v0.5.1
+   .\.venv\Scripts\python.exe tools\package_release.py --tag v0.5.3
 
    Change the tag example to match the version you are actually releasing.
-5. Open dist. Expect UpgradeCrossroads-v0.5.1-forever.zip for this version.
+5. Open dist. Expect UpgradeCrossroads-v0.5.3-forever.zip for this version.
 6. Extract that ZIP into a temporary folder. It must contain one top-level
    UpgradeCrossroads folder with its TOC directly inside. Do not upload the
    full development ZIP as the player install asset.
 7. Install and test the ZIP you just built, not an older installed folder.
 8. Push the source commit and wait for the repository's checks to finish.
 9. On GitHub open the repository -> Releases -> Draft a new release.
-10. Choose/create the matching tag, such as v0.5.1, on the tested commit.
+10. Choose/create the matching tag, such as v0.5.3, on the tested commit.
 11. Give it a title and notes explaining features, known limits and supported
     client. Attach the install-only -forever.zip from dist.
 12. Save as a draft until the asset and notes are correct. For an experimental
@@ -420,7 +420,7 @@ when maintaining an integration rather than assuming this guide stays exact
 forever. Nothing in this package has been published to your accounts for you.
 
 
-UI RELEASE 0.5.1: SHARED SHELL AND CLIENT SCREENSHOT REGRESSIONS
+UI RELEASE 0.5.3: SHARED SHELL AND CLIENT SCREENSHOT REGRESSIONS
 - Main.lua owns W.Page, ShowPage and LayoutPages. Gear/Hunts/Settings/Help/editor
   must remain children of pageHost. Never create another UIParent window for a
   settings or editor page. Only the main shell and tracker call W.Resizable.
@@ -439,3 +439,13 @@ UI RELEASE 0.5.1: SHARED SHELL AND CLIENT SCREENSHOT REGRESSIONS
 - Regression QA: cycle every page, close/reopen, edit/cancel a location, change
   scale/font size, type a hunt note and /reload. Check only one page is visible
   and no page creates a floating settings window.
+
+CLASS/SPEC PRESETS (0.5.3)
+Class is detected from the character. Click Spec to cycle only that class's
+choices. These are manual role-based starter presets, not automatic talent
+recognition or guide-derived BiS rankings. Same-role defaults can be identical.
+/uc weights saves to the selected spec; reset clears that spec's override only.
+Old broad-role overrides are independently copied once, retaining the originals.
+Hunter ranged-slot goals exclude thrown weapons. Survival melee/ranged presets
+count DPS in the corresponding weapon slots. Feral cat/bear include main-hand
+DPS under Forever mechanics. SOURCES.md records official class references.

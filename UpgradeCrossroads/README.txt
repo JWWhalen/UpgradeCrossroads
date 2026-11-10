@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.5.1
+UPGRADE CROSSROADS 0.5.3
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -17,11 +17,34 @@ FIRST USE
 The approved emblem beside your minimap opens the planner. Right-click for Hunts;
 drag it to reposition. /uc minimap reset restores the shortcut if it goes missing.
 
-Choose a profile and equipment slot. Quest & craft, Dungeons and Future gear are
+Your character class is detected automatically. Choose a spec and equipment slot.
+Quest & craft, Dungeons and Future gear are
 tabs in a native-style gear journal. The item list selects what to inspect;
 the large item name/icon or Track starts its guide directly. Chat or Shift-/
 right-click inserts an unsent link; Ctrl-click previews gear. Switch sources
 beside the selected item. Search filters names, sources or zones for this slot.
+
+CLASS AND SPEC
+The spec button offers only the detected character class's choices: 29 choices
+across nine classes. Choose the spec manually; this does not read your talent
+allocation or automatically switch when you change talents. Hunter Survival has
+separate melee and ranged playstyle choices; Druid Feral has cat and bear choices.
+
+These are starter role-weight presets, not guide-derived or simulated spec
+rankings. Specs sharing a role intentionally share their default weights. The
+profile explanation describes what is scored and what is not. /uc weights edits
+only the selected spec; /uc weights reset restores only that spec's defaults.
+Your old broad-role selection maps to a suitable spec for your class. Existing
+custom role weights are copied to that class's matching role presets once, while
+existing spec overrides and old weight entries are preserved. Hunts and notes
+are retained. Resetting a spec does not re-import old weights on the next login.
+
+Weapon recommendations also obey class compatibility. Hunters' ranged-slot
+recommendations include bows, guns and crossbows, not thrown weapons. This is a
+recommendation filter; it does not delete or alter an item you already equipped.
+Weapon DPS is scored in the selected playstyle's attack slots, so melee weapon
+DPS does not inflate a ranged Hunter's stat-stick score. Forever Feral cat/bear
+presets include main-hand weapon DPS; form abilities and procs are not simulated.
 
 FACTION
 Gear has exactly three faction choices: Alliance, Horde and Both. It defaults
@@ -89,7 +112,7 @@ No coordinates are invented for catalog entries with unknown positions.
 
 SCORING AND DATA LIMITS
 Scores are weighted sums of base stats. A +20 score is NOT +20% DPS, healing or
-survival. Profiles are broad starting points; switch/edit them for your build.
+survival. Profiles are starter role presets; choose/edit them for your build.
 Procs, set bonuses, caps, talents, school-specific bonuses and encounter effects
 are not simulated. Inspect the real tooltip before choosing a target.
 Weapon setups that differ (one-hand versus two-hand) do not receive a delta.
@@ -129,14 +152,14 @@ COMMANDS
 /uc minimap reset    Reset its position and show it
 
 UPDATES
-See UPDATING.txt. The ZIP has no automatic release feed yet. Your equipment,
+See UPDATING.txt. Published releases can be delivered through CurseForge. Your equipment,
 level and hunt state refresh in game, but the bundled catalog remains a dated
 snapshot until a maintained data release replaces it.
 
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This package has
+ownership changes, UI construction and command/event flows. This v0.5.3 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

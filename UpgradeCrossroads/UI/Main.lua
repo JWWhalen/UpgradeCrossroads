@@ -90,34 +90,33 @@ function XC:BuildGear()
     for i,slot in ipairs(self.Slots) do
         f.slots[slot.id]=at(W.Row(slotList,slot.label,136,29,function() XC.db.slot=slot.id; XC.selection={}; XC:Refresh() end),0,(i-1)*31)
     end
-    f.profile=at(W.Button(p,"",150,30,function()
-        local index=1; for i,profile in ipairs(XC.Profiles) do if profile.id==XC.db.profile then index=i end end
-        XC.db.profile=XC.Profiles[index%#XC.Profiles+1].id; XC.selection={}; XC:Refresh()
-    end),170,0)
-    W.Hint(f.profile,"Cycle the stat-weight profile. /uc weights customizes it.")
+    f.classLabel=at(W.Text(p,"",14,self.Colors.gold,nil,true),170,8)
+    f.profile=at(W.Button(p,"",230,30,function() XC:CycleProfile() end),170,40)
+    f.profileBasis=at(W.Text(p,"",12,self.Colors.muted,300),420,49)
+    W.Hint(f.profile,"Choose a specialization for your class. These are editable role-based estimates, not simulated BiS rankings. /uc weights customizes this spec.")
     f.solo=W.Toggle(p,"Solo",function(v) XC.db.options.solo=v; XC.selection={}; XC:Refresh() end)
     f.craft=W.Toggle(p,"Crafts",function(v) XC.db.options.crafted=v; XC.selection={}; XC:Refresh() end)
     f.auction=W.Toggle(p,"AH",function(v) XC.db.options.auction=v; XC.selection={}; XC:Refresh() end)
     W.Hint(f.solo,"Exclude known group content."); W.Hint(f.craft,"Allow crafted items."); W.Hint(f.auction,"Allow personal auction targets; no live price scan.")
     f.faction=W.Button(p,"",190,30,function() XC:CycleFactionFilter() end)
     W.Hint(f.faction,"Cycle Alliance, Horde or Both. Shared sources stay visible. Other-faction sources are labeled; class, level and other filters still apply.")
-    local current=W.Panel(p,824,87,self.Colors.panel); f.current=current; at(current,170,43)
+    local current=W.Panel(p,824,87,self.Colors.panel); f.current=current; at(current,170,87)
     current.icon=current:CreateTexture(nil,"ARTWORK"); current.icon:SetSize(38,38); at(current.icon,12,23)
     at(W.Text(current,"Equipped",12,self.Colors.muted),64,12)
     current.name=at(W.Text(current,"",14,self.Colors.text,520),64,32)
     current.stats=at(W.Text(current,"",12,self.Colors.muted,520),64,55)
     current.score=W.Text(current,"",13,self.Colors.gold,120); current.score:SetJustifyH("RIGHT")
     current.chat=W.Button(current,"Chat",62,28,function() XC:LinkItem(XC.baseline) end)
-    at(W.Text(p,"Search",13,self.Colors.muted),170,151)
-    f.search=at(W.Input(p,350,30),235,141)
+    at(W.Text(p,"Search",13,self.Colors.muted),170,195)
+    f.search=at(W.Input(p,350,30),235,185)
     f.search.edit:SetScript("OnTextChanged",function(edit,user) if user then XC.search=edit:GetText(); XC.selection={}; XC:Refresh() end end)
     f.search.edit:SetScript("OnEnterPressed",function(edit) edit:ClearFocus() end)
     W.Hint(f.search,"Item, boss, quest or zone names within this slot.")
     f.clearSearch=W.Button(p,"Clear",70,30,function() XC.search=""; f.search.edit:SetText(""); XC.selection={}; XC:Refresh() end)
     f.tabs={}; f.lanes={}
     for i,key in ipairs(laneOrder) do
-        f.tabs[key]=at(W.Row(p,titles[key],145,30,function() XC:SelectPath(key) end),170+(i-1)*151,185)
-        local c=W.Panel(p,824,350,self.Colors.panel); f.lanes[key]=c; at(c,170,223)
+        f.tabs[key]=at(W.Row(p,titles[key],145,30,function() XC:SelectPath(key) end),170+(i-1)*151,229)
+        local c=W.Panel(p,824,350,self.Colors.panel); f.lanes[key]=c; at(c,170,267)
         c.summary=at(W.Text(c,summaries[key],12,self.Colors.muted,790),14,14)
         c.listScroll=CreateFrame("ScrollFrame",nil,c,"UIPanelScrollFrameTemplate"); c.listScroll:SetPoint("TOPLEFT",12,-55); c.listScroll:SetPoint("BOTTOMLEFT",12,46); c.listScroll:SetWidth(208)
         c.list=CreateFrame("Frame",nil,c.listScroll); c.list:SetSize(204,400); c.listScroll:SetScrollChild(c.list); c.items={}
@@ -156,13 +155,15 @@ function XC:BuildGear()
     end
     p.Layout=function(_,width,height)
         local body=width-180; current:SetWidth(body); current.name:SetWidth(body-210); current.stats:SetWidth(body-140)
-        W.FitButton(f.profile,150); at(f.solo,184+f.profile:GetWidth(),3); at(f.craft,270+f.profile:GetWidth(),3); at(f.auction,364+f.profile:GetWidth(),3)
+        W.FitButton(f.profile,230); at(f.profile,170,40)
+        local toggles=190+f.classLabel:GetStringWidth()
+        at(f.solo,toggles,3); at(f.craft,toggles+86,3); at(f.auction,toggles+180,3)
         at(current.score,body-132,14); at(current.chat,body-84,49)
-        f.search:SetWidth(math.max(200,body-168)); W.FitButton(f.clearSearch,70); at(f.clearSearch,170+body-f.clearSearch:GetWidth(),141)
+        f.search:SetWidth(math.max(200,body-168)); W.FitButton(f.clearSearch,70); at(f.clearSearch,170+body-f.clearSearch:GetWidth(),185)
         local sy=0
         for _,slot in ipairs(XC.Slots) do local b=f.slots[slot.id]; b:SetHeight(math.max(29,b.label:GetStringHeight()+8)); at(b,0,sy); sy=sy+b:GetHeight()+2 end
         slotList:SetHeight(sy)
-        local ch=height-233
+        local ch=height-277
         for _,key in ipairs(laneOrder) do
             local c=f.lanes[key]; c:SetSize(body,ch); c.summary:SetWidth(body-28); c.detail:SetWidth(body-284); c.itemButton:SetWidth(body-284)
             W.FitButton(c.sourceChoice,body-284); W.FitButton(c.chat,72)
@@ -175,7 +176,15 @@ end
 function XC:Render()
     local f=self.window; if not f or not self.context then return end
     local profile=self:GetProfile(self.db.profile); local slot=self:GetSlot(self.db.slot)
-    f.profile.label:SetText(profile.label.."  >")
+    f.classLabel:SetText(self.ClassLabels[self.context.class] or self.context.class)
+    f.profile.label:SetText("Spec: "..(profile.spec or profile.label).."  >")
+    W.FitButton(f.profile,230)
+    f.profileBasis:SetText(self.db.weights[profile.id] and "Custom weights" or "Starter role weights")
+    f.profileBasis:SetWidth(math.max(1,f.gearPage:GetWidth()-194-f.profile:GetWidth()))
+    at(f.profileBasis,184+f.profile:GetWidth(),49)
+    local toggles=190+f.classLabel:GetStringWidth()
+    at(f.solo,toggles,3); at(f.craft,toggles+86,3); at(f.auction,toggles+180,3)
+    W.Hint(f.profile,(profile.description or "Choose your specialization.").."\n"..(profile.basis or "Role-based estimate").."\nClick to cycle your class's specs. /uc weights edits this spec only.")
     f.faction.label:SetText("Faction: "..self.Rules.FactionLabels[self.Rules.FactionMode(self.db.options,self.context)].."  >")
     W.FitButton(f.faction,190); at(f.faction,f.gearPage:GetWidth()-10-f.faction:GetWidth(),0)
     f.solo:SetChecked(self.db.options.solo); f.craft:SetChecked(self.db.options.crafted); f.auction:SetChecked(self.db.options.auction)
@@ -312,7 +321,7 @@ function XC:BuildAbout()
     local scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate"); scroll:SetPoint("TOPLEFT",20,-12); scroll:SetPoint("BOTTOMRIGHT",-32,12)
     local body=CreateFrame("Frame",nil,scroll); body:SetSize(720,1120); scroll:SetScrollChild(body)
     local sections={
-        {"UPGRADE PATHS","The tabs show Quest & craft, Dungeons and Future gear. Choose equipment on the left. Faction cycles Alliance, Horde and Both; shared or untagged sources stay visible. Opposite-faction sources are labeled as unavailable to this character. The profile sets stat weights. Filters remove sources you do not want; search finds item, source and zone names within the selected slot."},
+        {"UPGRADE PATHS","The tabs show Quest & craft, Dungeons and Future gear. Choose equipment on the left. Faction cycles Alliance, Horde and Both; shared or untagged sources stay visible. Opposite-faction sources are labeled as unavailable to this character. Your class is shown above a specialization selector. Click Spec to cycle your class's presets. /uc weights edits only that spec. Filters remove sources you do not want; search finds item, source and zone names within the selected slot."},
         {"QUEST & CRAFT / DUNGEONS / FUTURE GEAR","Reliable shows quest rewards and crafts with a defined outcome. Dungeon shows eligible group sources. Long-term includes future gear up to level 60. These are scored suggestions, not verified BiS rankings."},
         {"TRACK + MAP / TRACK + GUIDE","Choose an item from the list, then click its name or Track button to save it and start guidance immediately. Known destinations appear on the world map. Dungeon pins show outdoor entrances or approaches, not interior boss routes. Unknown coordinates remain clearly labeled."},
         {"CHAT / ITEM SHORTCUTS","Chat, Shift-click or right-click inserts an item link into your chat draft. You choose the channel and press Enter to send. Ctrl-click previews it in the dressing room. Uncached links may need a second click after data loads."},
@@ -320,7 +329,7 @@ function XC:BuildAbout()
         {"CUSTOM ITEM / SET LOCATION","Use Custom item for gear absent from the catalog. Set location on the tracker fills in the existing item and source; you only enter a map ID and X/Y percentages. Personal locations and targets save for this character."},
         {"APPEARANCE","The Settings page has saved style controls: Classic, Alliance, Horde or Midnight; background opacity; custom background, heading and border colors; two fonts, three text sizes and outlines. Readable scaling keeps text at least 12 screen pixels and window scale at least 80%."},
         {"WINDOWS / CONTROLS","The Gear, Hunts, Settings, Help and Add item pages share one window. Drag the title to move it, or the bottom-right grip to scale it. Shift-drag that grip to resize the layout. Settings also has a scale slider. The tracker remains separate. Close the planner with X or Escape. /uc guide reopens an active tracker; /uc resetwindows restores window defaults."},
-        {"SCORING / DATA","Scores add weighted base stats. Procs, set bonuses, stat caps and encounter effects are not simulated. Different weapon hand setups do not receive an upgrade delta. /uc weights edits your profile. Inspect tooltips before committing."},
+        {"SCORING / DATA","Spec presets add weighted base stats using editable role weights. Specs with the same role can share weights; these are not public-guide BiS rankings. Procs, set bonuses, talent multipliers, stat caps and encounter effects are not simulated. Different weapon hand setups do not receive an upgrade delta. /uc weights edits your profile. Inspect tooltips before committing."},
         {"CATALOG / LOCATION COVERAGE","3,529 items; catalog snapshot "..self.CatalogMeta.date..". Forever overrides and source facts are bundled from Polestar; other entries are marked Classic baseline. New or changed items can be missing. Native quest guidance and optional QuestieDB supply known quest locations; ambiguous chains still require checking. No live AH prices or exact walking routes are supplied."},
     }
     f.helpSections={}

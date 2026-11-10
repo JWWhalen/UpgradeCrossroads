@@ -48,7 +48,7 @@ def test(name, code):
 
 test('initialization and slash commands', '''
 FireEvent("ADDON_LOADED","UpgradeCrossroads")
-assert(XC.db.profile=="melee" and XC.db.slot==16)
+assert(XC.db.profile=="warrior_arms" and XC.db.slot==16)
 assert(type(SlashCmdList.UPGRADECROSSROADS)=="function")
 assert(XC.CatalogMeta.count==3529)
 ''')
@@ -125,7 +125,9 @@ assert(rows.dungeon[1] and rows.dungeon[1].delta==nil)
 ''')
 test('weapon DPS weight applies to hunter ranged slot, not melee stat sticks', '''
 local i={classID=2,stats={dps=10,agi=1}}
-local w=XC:GetProfile("ranged").weights
+local w
+for _,profile in ipairs(XC:GetProfiles("HUNTER")) do if profile.role=="ranged" then w=profile.weights; break end end
+assert(w)
 assert(XC.Rules.Score(i,w,18)>XC.Rules.Score(i,w,16))
 ''')
 test('equipped item exclusion and scored downgrade exclusion', '''
@@ -208,7 +210,7 @@ local classes={WARRIOR=1,PALADIN=2,HUNTER=3,ROGUE=4,PRIEST=5,SHAMAN=7,MAGE=8,WAR
 for class,id in pairs(classes) do
  local c={class=class,classID=id,raceID=1,side=1,level=25,equipped={},worn={},completed={}}
  for _,slot in ipairs(XC.Slots) do
-  for _,profile in ipairs(XC.Profiles) do
+  for _,profile in ipairs(XC:GetProfiles(class)) do
    local lanes=XC.Rules.Build(XC.Catalog,c,XC.db.options,slot,profile)
    for _,rows in pairs(lanes) do
     local seen={}
@@ -696,6 +698,126 @@ assert(b.point[2]+b.width<=XC.window.gearPage.width-9)
 UIParent:SetScale(prior); XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
 """)
 
+test('Hunter ranged recommendations exclude thrown in every path and retain shot weapons', '''
+local c={class="HUNTER",classID=3,raceID=1,side=1,level=25,equipped={},worn={},completed={}}
+local options={solo=false,crafted=true,auction=false,faction="both"}
+local catalog={}
+for _,sub in ipairs({2,3,16,18,19}) do
+    catalog[#catalog+1]={id=990100+sub,name="Weapon",classID=2,subclassID=sub,
+        inv=sub==16 and 25 or (sub==19 and 26 or 15),req=1,stats={agi=10,dps=sub==16 and 9999 or 30},
+        sources={{kind="quest",name="Quest"},{kind="dungeon",name="Dungeon"}}}
+end
+local profile={weights={agi=1,dps=5},weaponDpsSlots={[18]=true}}
+local lanes=XC.Rules.Build(catalog,c,options,XC:GetSlot(18),profile)
+for _,lane in pairs(lanes) do
+    assert(#lane==3)
+    for _,row in ipairs(lane) do assert(row.item.subclassID==2 or row.item.subclassID==3 or row.item.subclassID==18) end
+end
+-- Real dagger melee stat sticks remain eligible; the thrown classification is distinct.
+assert(XC.Rules.Usable({inv=13,classID=2,subclassID=15},c,XC:GetSlot(16)))
+-- Quest faction/class gates are not bypassed by a matching weapon type.
+catalog[1].classMask=1
+assert(not XC.Rules.Usable(catalog[1],c,XC:GetSlot(18)))
+''')
+test('ranged weapon types stay class-specific across all nine classes', '''
+local c={level=60}
+local ranged=XC:GetSlot(18)
+for class,id in pairs({WARRIOR=1,PALADIN=2,HUNTER=3,ROGUE=4,PRIEST=5,SHAMAN=7,MAGE=8,WARLOCK=9,DRUID=11}) do
+    c.class=class; c.classID=id
+    for _,sub in ipairs({2,3,16,18,19}) do
+        local expected=(sub==19 and (class=="PRIEST" or class=="MAGE" or class=="WARLOCK"))
+            or (sub~=19 and (class=="WARRIOR" or class=="ROGUE" or (class=="HUNTER" and sub~=16)))
+        local item={classID=2,subclassID=sub,inv=sub==16 and 25 or (sub==19 and 26 or 15)}
+        assert(not not XC.Rules.Usable(item,c,ranged)==not not expected,class.." / "..sub)
+    end
+end
+''')
+test('explicit weapon DPS slots override stat heuristics for melee ranged and feral profiles', '''
+local item={classID=2,stats={agi=2,dps=20}}
+local weights={agi=1,dps=5,rap=.5}
+local melee={[16]=true,[17]=true}; local ranged={[18]=true}; local feral={}
+assert(XC.Rules.Score(item,weights,16,melee)==102)
+assert(XC.Rules.Score(item,weights,18,melee)==2)
+assert(XC.Rules.Score(item,weights,18,ranged)==102)
+assert(XC.Rules.Score(item,weights,16,ranged)==2)
+assert(XC.Rules.Score(item,weights,16,feral)==2)
+assert(XC.Rules.Score({classID=4,stats={agi=2,dps=20}},weights,16,melee)==2)
+local c={class="HUNTER",classID=3,raceID=1,side=1,level=60,equipped={
+    [16]={inv=13,classID=2,subclassID=15,stats={agi=1,dps=10}}},worn={},completed={}}
+local target={id=990199,inv=13,classID=2,subclassID=15,req=1,stats={agi=1,dps=20},sources={{kind="quest",name="Test"}}}
+local lanes=XC.Rules.Build({target},c,{crafted=true},XC:GetSlot(16),{weights=weights,weaponDpsSlots=melee})
+assert(#lanes.reliable==1 and lanes.reliable[1].delta==50)
+''')
+
+test('class selectors expose only the character specs and preserve independent custom weights', """
+local oldClass,oldID,oldProfile=MockClass,MockClassID,XC.db.profile
+local pin=XC.db.pins[tostring(PinnedID)]; local oldNote=pin and pin.notes
+MockClass="MAGE"; MockClassID=8; XC.db.profile="mage_frost"; XC:Refresh()
+assert(#XC:GetProfiles()==3 and XC.window.classLabel.text=="Mage")
+assert(XC.window.profile.label.text:find("Frost",1,true))
+assert(not XC:SetProfile("hunter_marksmanship"))
+SlashCmdList.UPGRADECROSSROADS("weights int=4")
+assert(XC:GetProfile("mage_frost").weights.int==4)
+XC.window.profile.scripts.OnClick(); assert(XC.db.profile=="mage_arcane")
+assert(XC:GetProfile(XC.db.profile).weights.int==.6)
+SlashCmdList.UPGRADECROSSROADS("weights int=2")
+XC:SetProfile("mage_frost"); assert(XC:GetProfile(XC.db.profile).weights.int==4)
+FireEvent("ADDON_LOADED","UpgradeCrossroads"); assert(XC.db.profile=="mage_frost")
+SlashCmdList.UPGRADECROSSROADS("weights reset"); assert(XC:GetProfile(XC.db.profile).weights.int==.6)
+assert(XC:GetProfile("mage_arcane").weights.int==2)
+XC.db.weights.mage_arcane=nil
+if pin then assert(XC.db.pins[tostring(PinnedID)]==pin and pin.notes==oldNote) end
+MockClass=oldClass; MockClassID=oldID; XC.db.profile=oldProfile; XC:Refresh()
+""")
+test('legacy class roles and custom weights migrate once without clearing saved goals', """
+local original=XC.db
+local hunt={notes="keep",checks={[1]=true}}
+XC.db={profile="ranged",weights={ranged={agi=8,dps=3},hunter_marksmanship={agi=7}},pins={hunt=hunt},options={},windows={}}
+XC:MigrateProfiles("HUNTER")
+assert(XC.db.profile=="hunter_beastmastery" and XC.db.profileMigration==1)
+assert(XC.db.weights.hunter_beastmastery.agi==8)
+assert(XC.db.weights.hunter_survivalranged.agi==8)
+assert(XC.db.weights.hunter_marksmanship.agi==7)
+assert(XC.db.weights.hunter_beastmastery~=XC.db.weights.ranged)
+assert(XC.db.weights.hunter_beastmastery~=XC.db.weights.hunter_survivalranged)
+assert(XC.db.pins.hunt==hunt and hunt.notes=="keep" and hunt.checks[1])
+XC.db.weights.hunter_beastmastery=nil; XC:MigrateProfiles("HUNTER")
+assert(not XC.db.weights.hunter_beastmastery)
+assert(XC:ResolveProfileID("tank","DRUID")=="druid_feralbear")
+assert(XC:ResolveProfileID("caster","PRIEST")=="priest_shadow")
+assert(XC:ResolveProfileID("healer","PALADIN")=="paladin_holy")
+assert(XC:ResolveProfileID("hunter_marksmanship","MAGE")=="mage_frost")
+XC.db=original; XC:Refresh()
+""")
+test('survival playstyles choose the relevant weapon DPS slot without assuming retail mechanics', """
+local priorClass,priorID=MockClass,MockClassID
+MockClass="HUNTER"; MockClassID=3
+local melee=XC:GetProfile("hunter_survival"); local ranged=XC:GetProfile("hunter_survivalranged")
+local weapon={classID=2,stats={dps=20}}
+assert(XC.Rules.Score(weapon,melee.weights,16,melee.weaponDpsSlots)==100)
+assert(XC.Rules.Score(weapon,melee.weights,18,melee.weaponDpsSlots)==0)
+assert(XC.Rules.Score(weapon,ranged.weights,16,ranged.weaponDpsSlots)==0)
+assert(XC.Rules.Score(weapon,ranged.weights,18,ranged.weaponDpsSlots)==100)
+MockClass="DRUID"; MockClassID=11
+local cat=XC:GetProfile("druid_feralcat")
+assert(XC.Rules.Score(weapon,cat.weights,16,cat.weaponDpsSlots)>0)
+MockClass=priorClass; MockClassID=priorID
+""")
+test('long spec names remain within the shared page at minimum size and largest text', """
+local class,id,profile=MockClass,MockClassID,XC.db.profile
+MockClass="HUNTER"; MockClassID=3; XC.db.profile="hunter_survivalranged"; XC:Refresh()
+XC.window:SetSize(900,720); XC:Appearance().textBoost=2; XC:ApplyAppearance()
+local f=XC.window
+assert(f.classLabel.text=="Hunter" and f.profile.label.text:find("Survival (ranged)",1,true))
+assert(f.profile.point[3]==-40)
+assert(f.profile.point[2]+f.profile.width<f.gearPage.width-10)
+assert(f.profileBasis.point[2]+f.profileBasis.width<=f.gearPage.width-9)
+assert(f.current.point[3]==-87)
+assert(f.faction.point[2]>f.auction.point[2]+f.auction.width+f.auction.label:GetStringWidth()+10)
+XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
+MockClass=class; MockClassID=id; XC.db.profile=profile; XC:Refresh()
+""")
+
 # Texture packaging checks do not depend on the client double.
 import struct
 for filename,size in [("IconRound.tga",64),("LogoRound.tga",256)]:
@@ -747,5 +869,9 @@ lua.execute('XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetG
 export_layout('layout-appearance.json')
 lua.execute('XC:Appearance().textBoost=2; XC:ApplyAppearance(); local item=XC.Catalog[872]; XC:TrackItem({item=item,source=item.sources[1]},"dungeon",false); XC.guide:SetSize(330,330); XC.W.SetWindowScale(XC.guide,.8)')
 export_layout('layout-guide-readable.json')
+lua.execute('XC:ShowPage("gear"); XC.window:SetSize(900,720); XC:Appearance().textBoost=2; XC:ApplyAppearance(); MockClass="HUNTER"; MockClassID=3; XC.db.profile="hunter_survivalranged"; XC:Refresh()')
+export_layout('layout-hunter-spec-min.json')
+lua.execute('MockClass="WARLOCK"; MockClassID=9; XC.db.profile="warlock_destruction"; XC:Refresh()')
+export_layout('layout-warlock-spec-min.json')
 (ROOT/'research/test-results.json').write_text(json.dumps(dict(runtime='Lua 5.1 via lupa',passed=cases),indent=2))
-print(f'\n{len(cases)} test groups passed; twelve layout fixtures exported.')
+print(f'\n{len(cases)} test groups passed; fourteen layout fixtures exported.')

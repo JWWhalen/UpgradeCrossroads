@@ -1,8 +1,8 @@
 KEEPING UPGRADE CROSSROADS CURRENT
 
-This build has no hosted update feed. Installing this ZIP does not register
-it with CurseForge or WowUp, and the addon does not download new code or a
-new catalog from inside the game.
+Approved public releases are distributed through the existing CurseForge project.
+Installing a standalone test ZIP does not publish it or establish a release feed.
+The addon does not download code or a new catalog from inside the game.
 
 WHAT ALREADY REFRESHES WHILE YOU PLAY
 - Which equipment you have equipped.

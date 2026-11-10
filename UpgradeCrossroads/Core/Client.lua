@@ -142,9 +142,24 @@ function XC:Pin(row,lane)
     C.UpdatePins()
     self:Refresh()
 end
+function XC:SetProfile(id)
+    local profile=self:GetProfile(id)
+    if profile.id~=id then return false end
+    self.db.profile=id
+    self.selection={}; self.sourceSelection={}
+    self:Refresh()
+    return true
+end
+function XC:CycleProfile()
+    local profiles=self:GetProfiles(); if #profiles==0 then return end
+    local current=self:GetProfile(self.db.profile).id; local index=1
+    for i,profile in ipairs(profiles) do if profile.id==current then index=i; break end end
+    self:SetProfile(profiles[index%#profiles+1].id)
+end
 function XC:Refresh()
     if not self.db then return end
     self.context=C.Context()
+    self:MigrateProfiles(self.context.class)
     if not self.Rules.FactionLabels[self.db.options.faction] and self.context.side~=0 then
         self.db.options.faction=self.Rules.FactionMode(self.db.options,self.context)
     end

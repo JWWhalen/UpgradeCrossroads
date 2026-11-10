@@ -2,7 +2,7 @@
 ## Title: Upgrade Crossroads
 ## Notes: Compare reliable upgrades, dungeon hunts and long-term gear goals.
 ## Author: FlakieGames
-## Version: 0.5.2
+## Version: 0.5.3
 ## X-Curse-Project-ID: 1793236
 ## OptionalDeps: QuestieDB, Questie
 ## SavedVariablesPerCharacter: UpgradeCrossroadsDB

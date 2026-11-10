@@ -1,12 +1,12 @@
-UPGRADE CROSSROADS 0.5.1 - START HERE
+UPGRADE CROSSROADS 0.5.3 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.5.1-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.5.3-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.5.1.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.5.3.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
@@ -42,8 +42,21 @@ against the logged-in character; its class/gear rules remain. Current-faction
 race and completed-quest checks are retained. Sources are tagged from the dated
 catalog; missing faction data is not guessed from place or NPC names.
 
+CLASS AND SPEC
+Your class is detected automatically. On Gear, click the spec button to cycle
+only that class's choices. These are manual choices, not talent auto-detection.
+There are 29 choices across nine classes, including Survival melee/ranged and
+Feral cat/bear. Specs sharing a role share starter weights, not independently
+simulated rankings. /uc weights customizes only the selected spec; reset restores
+only its defaults. Existing broad-role choices and custom weights are migrated
+without deleting hunts, notes or saved settings.
+
+Hunters no longer receive thrown weapons as ranged-slot recommendations. Melee
+weapon DPS does not count toward ranged Hunter stat sticks. Feral cat/bear do
+include main-hand DPS, reflecting Forever's form weapon-DPS rule.
+
 USING IT
-Choose Gear, a profile, equipment slot and Quest & craft / Dungeons / Future gear.
+Choose Gear, a spec, equipment slot and Quest & craft / Dungeons / Future gear.
 Choose an item from the list to inspect it. Click the large name/icon or Track
 for immediate guidance. Select another eligible source beside that item.
 Search finds item, source and zone names within the current slot and filters.
@@ -70,17 +83,19 @@ an old default 95% background fully opaque; a deliberately lower opacity is kept
 Restore appearance resets look preferences only. /uc resetwindows resets geometry.
 
 FIRST LIVE CHECK
-1. Confirm the minimap emblem is round and X is a normal close icon.
+1. Confirm your detected class and cycle its spec choices. Verify only your
+   class appears; try different roles if your class supports them.
 2. Switch all five pages. Only one should appear, with no gear visible behind it.
 3. Try the main window and tracker at your normal UI scale and Largest text.
-4. Try source selection, Track/map, Chat, hunt notes and editor Cancel.
+4. Try source selection, Track/map, Chat, hunt notes and editor Cancel. On a
+   Hunter, confirm thrown weapons are absent from ranged recommendations.
 5. Change settings, close/reopen the window and /reload. Check everything saves.
 
-69 automated test groups, circular RGBA assets and 12 offline layout fixtures pass.
+Automated Lua checks, circular RGBA assets and offline layouts are included.
 The attached screenshots exposed issues the old offline skin could not predict;
 actual client font/template rendering still needs an in-game pass for this build.
 PREVIEW.png and GUIDE_PREVIEW.png are labeled offline illustrations, not live QA.
-Catalog remains the 2026-10-13 snapshot. This is a UI and asset release.
+Catalog remains the 2026-10-13 snapshot. This is a profile and filtering update.
 
 The full source archive includes tests, tools, logo masters and the maintenance
 guide. Runtime needs no Python. Do not copy development files into AddOns.

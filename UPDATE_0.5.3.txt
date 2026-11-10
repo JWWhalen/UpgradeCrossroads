@@ -1,0 +1,29 @@
+UPGRADE CROSSROADS v0.5.3 SOURCE UPDATE
+
+This is an update overlay for your existing C:\Dev\UpgradeCrossroads project
+from GitHub main v0.5.2. It is not a complete source checkout.
+
+1. In GitHub Desktop, Fetch/Pull main before applying.
+2. Extract this ZIP into C:\Dev\UpgradeCrossroads. Merge folders and replace
+   the included files. Do not extract into the inner addon folder.
+3. Keep .git, .venv, research input files, and your WoW WTF folder.
+4. In VS Code terminal run separately:
+   .\.venv\Scripts\python.exe tests\run_tests.py
+   .\.venv\Scripts\python.exe tools\review_layouts.py
+   .\.venv\Scripts\python.exe tools\package_release.py --tag v0.5.3
+5. Close WoW. Extract the install ZIP in dist and copy its UpgradeCrossroads
+   folder into the Forever Interface\AddOns directory. Restart WoW.
+6. Check /uc status reports0.5.3. Check your character class and click Spec.
+   On a Hunter, test Beast Mastery/Marksmanship/Survival melee/ranged and the
+   ranged slot: only bows/guns/crossbows should be recommended. A melee dagger
+   can still be an appropriate main/offhand stat stick.
+7. Check /uc weights changes only the chosen spec. Switch spec and reload.
+   Hunts, notes, source locations, filters, colors and window positions should
+   remain. Specs sharing a role intentionally share starter defaults.
+8. In GitHub Desktop review the changed files, commit and Push origin.
+9. After the in-game pass and successful GitHub checks, create/push tag v0.5.3
+   on that commit to publish through your existing CurseForge release workflow.
+
+No GitHub commit, release tag or CurseForge upload was made by this update.
+Verified offline:76 automated groups,14 layout checks. Live-client QA pending.
+Catalog remains October13,2026; no new loot data or simulated BiS weights.

@@ -1,6 +1,6 @@
-# Upgrade Crossroads 0.5.1 validation
+# Upgrade Crossroads 0.5.3 validation
 
-Target: WoW: Forever, interface 16001. Built 2026-11-08.
+Target: WoW: Forever, interface 16001. Built 2026-11-10.
 
 ## Evidence and changes
 
@@ -21,7 +21,7 @@ texture/template effects. The revision addresses those concrete problems:
 
 ## Automated checks
 
-69 groups load the actual TOC and Lua under Lua 5.1 via lupa with an explicit
+76 groups load the actual TOC and Lua under Lua 5.1 via lupa with an explicit
 client double. Existing scoring/filter/class/slot/profile, cache, saved hunt,
 notes, ownership, weight, chat, quest/provider, waypoint and combat cases pass.
 The changed UI cases cover shell geometry, page inheritance, exclusive page
@@ -38,7 +38,7 @@ All four corners are fully transparent and their centers are opaque. The PNG
 master retains generated transparency. The minimap button has no square backdrop.
 The texture build check verifies both committed assets against that master.
 
-Twelve offline frame-tree layouts cover default and compact shell pages, normal
+Fourteen offline frame-tree layouts cover default and compact shell pages, normal
 and largest text at 80% scale, and the separate tracker. Strict text overflow
 checks and visual spacing review pass. Native art/font substitutions are labeled.
 The preview respects scroll clipping, scale, alpha and packaged texture pixels.
@@ -71,3 +71,22 @@ hunt/notes retention; cycling/persistence; and the control's bounds at minimum
 size with largest text and non-default global UI scaling. Source labels and
 availability identify faction-exclusive acquisition. Source tags come from the
 existing snapshot; this release does not add or infer new faction data.
+
+## Class/spec feedback in 0.5.3
+
+The character class replaces broad role labels; only its specs are cycled.
+29 choices cover nine classes, including Hunter Survival melee/ranged and
+Druid Feral cat/bear. Starter weights are original role estimates: same-role
+specs intentionally share defaults and are not advertised as simulated BiS.
+Hunter ranged recommendations reject thrown weapons regardless of score;
+bows, guns and crossbows remain. Explicit DPS-slot policy is used for both
+candidates and equipped baselines. Forever Feral presets include main-hand
+weapon DPS following Blizzard's published class change.
+
+Seven new groups verify weapon filtering, all-nine-class ranged compatibility,
+explicit DPS policy, class-only selection, independent per-spec overrides,
+legacy migration, safe reset/reload, and longest-label geometry. Fourteen
+layouts include minimum-size Hunter Survival and Warlock Destruction at
+largest text. All 76 groups and 14 strict layouts pass. No live-client pass
+has been performed for v0.5.3; the user's prior v0.5.2 pass is not reused as
+proof of these changes. The catalog snapshot remains October 13.

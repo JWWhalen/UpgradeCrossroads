@@ -23,8 +23,7 @@ local function defaults()
     db.slot=db.slot or 16
     db.pinOrder=db.pinOrder or 0
     local _,class=UnitClass("player")
-    local profile={MAGE="caster",WARLOCK="caster",PRIEST="healer",HUNTER="ranged",DRUID="melee",PALADIN="melee",SHAMAN="melee",ROGUE="melee",WARRIOR="melee"}
-    db.profile=db.profile or profile[class] or "melee"
+    XC:MigrateProfiles(class)
 end
 local function open()
     if not XC.db then return end
