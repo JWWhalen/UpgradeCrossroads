@@ -1,3 +1,10 @@
+v0.5.2
+- Added the approved CurseForge project identifier.
+- Added automated release checks and tag-triggered CurseForge publishing.
+- No changes to gear scoring, item data, or saved settings.
+- Bundled item data remains the October 13, 2026 snapshot.
+
+
 UPGRADE CROSSROADS 0.5.1
 - Gear has a faction filter with exactly Alliance, Horde and Both.
 - Defaults to the character's faction and saves the selection per character.

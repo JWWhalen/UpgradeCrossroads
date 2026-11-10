@@ -1,6 +1,6 @@
 local name, XC = ...
 XC.name = name
-XC.version = "0.5.1"
+XC.version = "0.5.2"
 XC.Slots = {
     {id=1,label="Head",inv={1}}, {id=2,label="Neck",inv={2}},
     {id=3,label="Shoulder",inv={3}}, {id=15,label="Back",inv={16}},
