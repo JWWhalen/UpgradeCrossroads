@@ -1,0 +1,441 @@
+UPGRADE CROSSROADS: BUILD, TEST, POLISH, PUBLISH AND MAINTAIN
+Windows beginner guide / development package v0.5.1
+
+Read Part 1 through Part 4 first. That gives you a repeatable development loop
+and verifies the corrected tracking flow before any public release.
+
+WHAT THIS PACKAGE ACTUALLY CONTAINS
+The addon is written in Lua. Its TOC file tells WoW which Lua files to load.
+Python is used outside the game to rebuild data, run local checks, draw layout
+previews and package a release. Players do not need Python.
+
+The current flow is: choose a slot -> click an item or Track -> follow the
+active guide. Show on map is on the same card. You do not need Custom item or
+My hunts to begin tracking an item already displayed in the catalog.
+
+Map guidance has explicit limits. Native quest guidance follows active quests.
+Installed QuestieDB can provide known giver/spawn locations and prerequisite
+links. Bundled dungeon coordinates lead to an outdoor entrance or approach,
+not the precise room containing the boss. Crafting guidance does not invent
+recipe vendors, ingredient lists or drop locations that the data lacks.
+
+PART 1: MAKE A DEVELOPMENT FOLDER
+
+1. Close WoW.
+2. In File Explorer, create C:\Dev if it does not already exist.
+3. Create C:\Dev\UpgradeCrossroads.
+4. Extract the FULL development ZIP into that directory. If Windows creates
+   an extra wrapper directory, move its contents up one level.
+5. Check that these paths exist:
+   C:\Dev\UpgradeCrossroads\UpgradeCrossroads\UpgradeCrossroads.toc
+   C:\Dev\UpgradeCrossroads\tools\package_release.py
+   C:\Dev\UpgradeCrossroads\tests\run_tests.py
+   C:\Dev\UpgradeCrossroads\requirements-dev.txt
+   The first UpgradeCrossroads is the development project; the second is the
+   addon folder players install.
+6. Keep this working project outside OneDrive's Desktop/Documents sync. Your
+   source history will be backed up with GitHub in Part 6. Keep a second backup
+   of important local work too. A shared sync folder should not be your only
+   copy of a project.
+7. Turn on File Explorer's file-name extensions so .lua and .toc are visible.
+8. Install/open Visual Studio Code from https://code.visualstudio.com/.
+9. Choose File -> Open Folder and select C:\Dev\UpgradeCrossroads.
+10. The left Explorer panel should show UpgradeCrossroads, tools, tests and
+    research as siblings. Open UpgradeCrossroads\Core\Bootstrap.lua and find
+    XC.version = "0.5.1". Do not change it yet.
+
+Checkpoint: you can locate the addon folder and distinguish it from the
+development project. Do not edit only the installed game copy: the development
+folder is the authoritative source.
+
+PART 2: SET UP THE LOCAL CHECKS ONCE
+
+1. Install a supported Python 3 from https://www.python.org/downloads/ if you
+   do not already have it. Python 3.12 or newer is suitable for this toolchain.
+2. Restart VS Code after installation so its terminal sees the launcher.
+3. In VS Code choose Terminal -> New Terminal. Use PowerShell.
+4. Enter each command separately:
+
+   cd C:\Dev\UpgradeCrossroads
+   py -3 --version
+   py -3 -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
+
+5. Wait for the package installation to finish. The pinned packages are lupa,
+   which runs the Lua 5.1 tests, and Pillow, which renders offline previews.
+6. Run:
+
+   .\.venv\Scripts\python.exe tests\run_tests.py
+
+7. Expect PASS lines and a final summary. For this delivered build there are
+   69 test groups. A traceback or nonzero exit means stop and investigate.
+8. Generate an offline layout preview:
+
+   .\.venv\Scripts\python.exe tools\render_preview.py
+
+9. Open UpgradeCrossroads\PREVIEW.png in File Explorer. It uses the actual
+   Lua frame layout with font/icon substitutions. It is not a live WoW test.
+
+Checkpoint: you can run tests again after any edit without setting up Python
+again. Calling .venv\Scripts\python.exe directly avoids PowerShell activation
+policy problems. If py is not recognized, fix the Python installation first.
+
+PART 3: INSTALL YOUR DEVELOPMENT COPY
+
+1. In Battle.net select your Forever installation, then use its game options
+   to Show in Explorer. Locate Interface\AddOns inside the correct client.
+2. Copy that AddOns path from Explorer's address bar.
+3. With WoW closed, run the included installer. Substitute your actual path:
+
+   powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\Install-Dev.ps1 -AddOnsPath "C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns"
+
+4. The script copies only the runtime addon into a folder named
+   UpgradeCrossroads. It does not delete your WTF folder or install developer
+   tools into the game. The policy option applies only to this script process.
+5. Check that Interface\AddOns\UpgradeCrossroads\UpgradeCrossroads.toc exists.
+   Avoid Interface\AddOns\UpgradeCrossroads\UpgradeCrossroads\... nesting.
+6. Start WoW, enable Upgrade Crossroads in the AddOns list, and enter the world.
+7. Run /uc status. Confirm that the addon reports v0.5.1 and the expected client.
+8. Open it with /uc or the minimap button.
+9. For your Mage, choose Caster. Choose a slot and compare the three paths.
+
+During development, edit the C:\Dev copy, run the tests, run Install-Dev.ps1
+again, then /reload in game for ordinary Lua changes. Fully restart the client
+after changing the TOC or its file list. The installer does not perform this
+testing or restart the game for you.
+
+PART 4: VERIFY THE CORRECTED ITEM FLOW IN GAME
+
+Do these checks before building more features. Note the item ID, source and
+exact failing action if a check fails.
+
+1. Click an item's icon/name. It should start tracking immediately. The Custom
+   item editor and My hunts should not open as a required intermediate step.
+2. Tracking closes the planner so the guide can be followed without covering
+   another item card. Reopen the planner through the minimap to compare again.
+   Click Track on another card. It should switch the guide and preserve
+   the earlier hunt in your saved list.
+3. Close the main planner. The compact active guide should stay visible.
+4. Drag the guide by its heading. Reload. Check its position and active item.
+5. For a dungeon DROP item, use Show on map. Check that the pin leads to the
+   dungeon's outdoor entrance/approach, and that the guide says entrance only.
+   A quest reward involving a dungeon may guide to its quest step instead.
+6. For an active quest reward, use Show on map. The tracked quest should be the
+   relevant objective rather than a permanent arrow back to the giver.
+7. To test pickup locations before accepting a quest, install a compatible
+   Forever QuestieDB release with its normal dependencies. Questie is useful
+   alongside it but not required for the provider's basic field reads. Restart
+   WoW. The source resolver reads LibQuestieDB when available.
+8. Pick a quest with a known missing prerequisite. The guide should identify
+   its next known prerequisite. Complete/turn in that prerequisite. The guide
+   should move forward on the quest event, even with the planner closed.
+9. If the database gives alternative prerequisite branches, expect a warning
+   to check eligibility. This version does not guess which faction/class branch
+   you can take or promise to solve every special unlock condition.
+10. If a card has several eligible sources, use Source N of M on that card.
+    Track the selected source. It should update that item's hunt without
+    creating duplicate entries or erasing your notes.
+11. Choose an item with no known coordinates. The guide should still open and
+    explain the source. It must not make up a pin or leave its own old pin
+    misleadingly active. It must preserve an unrelated waypoint you set.
+12. If you know the missing location, choose Set location in the active guide.
+    Item/source fields are already selected. Supply a valid UI map ID and X/Y
+    percentages, then Save location. This changes that source's location only.
+13. Obtain a tracked item. Confirm that the guide says OBTAINED when it reaches
+    your bags. Checking a manual step does not itself prove item acquisition.
+14. Test /reload and logging out/in. Your active hunt, notes, completed checklist
+    steps, source corrections and minimap position should survive.
+15. Test your usual UI scale, a narrow window, a long item name, combat, and the
+    other addons you normally use. Do not call the addon live-tested merely
+    because the offline tests pass.
+
+The underlying catalog is still the dated snapshot in SOURCES.md. A correct
+interface does not establish that every item, reward or coordinate is current.
+
+PART 5: UNDERSTAND WHERE TO CHANGE THINGS
+
+UpgradeCrossroads\UpgradeCrossroads.toc
+  Addon identity, version, saved-variable declaration, optional dependencies
+  and load order. New runtime Lua files must be listed in the correct order.
+
+Core\Bootstrap.lua
+  Namespace, colors, slot definitions, profile defaults and runtime version.
+
+Core\Rules.lua
+  Scoring, equipment compatibility, filters and three-path classification.
+  Keep this independent of client UI functions so it remains testable.
+
+Core\Client.lua
+  Live client item/equipment state, ownership, saved-hunt updates and refresh
+  scheduling. Guard APIs that may not exist in a client version.
+
+Core\Navigation.lua
+  Source identities, optional QuestieDB reads, known prerequisite selection,
+  destination validation and safe waypoint actions. Keep AreaIDs separate from
+  UI map IDs. Coordinates in this module's point objects use 0-100 percentages.
+
+UI\Main.lua, UI\Guide.lua, UI\TargetEditor.lua, UI\Widgets.lua
+  Cards, direct actions, persistent guide, source-correction popup and widgets.
+  Addon behavior should call the same tracking functions from every UI entry.
+
+UI\Minimap.lua
+  Shortcut icon, clicks, saved position and dragging.
+
+Data\Catalog.lua and Data\Locations.lua
+  Generated outputs. Do not patch these as the long-term data source. Changes
+  belong in the input data/generator and should be regenerated and attributed.
+
+tools\build_catalog.py
+  Rebuilds the runtime catalog and entrance data from pinned research inputs.
+  It reads the actual upstream snapshot date rather than today's date.
+
+tools\audit_catalog.py
+  Reports age, Classic fallback count and bundled entrance coverage. It does
+  not pretend to measure runtime QuestieDB coverage or live loot accuracy.
+
+tools\package_release.py
+  Builds the install-only ZIP whose name ends in -forever.zip.
+
+tests\run_tests.py and tests\wow_stub.lua
+  Regression checks and the client double. Extend them when a bug exposes a
+  missing behavior. Real client security/rendering still needs a live pass.
+
+PART 6: PUT THE SOURCE UNDER VERSION CONTROL
+
+1. Install GitHub Desktop from https://desktop.github.com/ and sign in.
+2. Use File -> New repository. Set Name to UpgradeCrossroads and Local path
+   to C:\Dev so the final repository path is your existing project folder.
+   Do not create a second nested project. Keep the supplied .gitignore and
+   license/third-party notices instead of replacing them with generated ones.
+3. Check the changed-file list. Include the addon, tools, tests, requirements,
+   guide, workflow and pinned research inputs. Exclude .venv, dist, personal
+   SavedVariables, account files, credentials and any unrelated project.
+4. Commit with a concrete summary such as "Add direct item tracking and guide".
+5. Choose Publish repository when ready. Private is fine for development;
+   ordinary public addon delivery later needs publicly accessible release files.
+6. Before every work session, Fetch origin/Pull if another machine changed it.
+7. After a verified change, commit it. Push regularly so your backup includes
+   the work. A local commit alone is not an off-PC backup.
+8. Create a branch for a larger feature. Fix one concrete behavior at a time,
+   check it locally and in game, then merge it when it is ready.
+
+The included .github/workflows/checks.yml runs source generation, the audit,
+Lua tests, preview generation and ZIP packaging on GitHub after a push/PR.
+It uploads the install ZIP as a workflow artifact. It does not publish a
+public release or verify behavior inside WoW. That workflow has not been
+executed in your GitHub account yet.
+
+PART 7: POLISH TOWARD A FIRST PUBLIC RELEASE
+
+Work in this order. Each item has an observable completion condition.
+
+1. Finish the direct tracking/navigation live pass in Part 4. Record any
+   failures as issues with reproducible steps. Fix those before adding menus.
+2. Verify data for a small supported slice, starting with the low-level Mage
+   items and dungeons you can actually test. Confirm rewards, quest access,
+   sources and entrance pins in game. Mark unverified coverage honestly.
+3. Improve quest guidance where conditions are incomplete: alternative quest
+   branches, reputation/class/level restrictions, object/item starters and
+   multi-step unlocks. Every new condition needs evidence and regression cases.
+4. Improve crafting guidance with a licensed, versioned recipe/ingredient
+   source. Confirm recipe acquisition and material requirements. A generic
+   three-step checklist is not a complete crafting dependency solver.
+5. Make navigation sources easier to inspect. Show the chosen giver/boss,
+   destination type, data provider and missing-location explanation. Avoid
+   claims that a reported spawn is currently alive or a drop is guaranteed.
+6. Check UI scale, text wrapping, keyboard access, tooltips, dragging, empty
+   slots, unavailable data, source switching and the guide's independence.
+7. Review scoring. Add tested spec profiles if you have appropriate data.
+   Continue to say weighted score rather than DPS percentage unless an actual
+   validated simulation supports the claim. Account for procs/sets explicitly
+   before making stronger BiS claims.
+8. Measure performance in the real client. Do not add all-world scans on every
+   frame. Keep event refreshes coalesced; only active minimap/window scaling drags need a temporary
+   OnUpdate loop. Check behavior with the planner closed and one guide active.
+9. Add helpful diagnostics and report examples. Reproduce issues with only
+   this addon enabled before attributing them to another addon.
+10. Have a small test group try the install-only ZIP from a clean extraction.
+    Ask for the exact addon/client version and error text, not just "broken".
+
+PART 8: BUILD AND PUBLISH A RELEASE
+
+1. Finish the live checks and commit the final source.
+2. Set the same version in UpgradeCrossroads.toc and Core\Bootstrap.lua.
+   Example: the next small bug-fix build after 0.5.1 can be 0.5.2.
+3. Write CHANGELOG.txt around resulting behavior and actual fixes. Record data
+   changes separately from code changes. A code-only fix must not claim a
+   refreshed catalog date.
+4. Run these separately from the project root:
+
+   .\.venv\Scripts\python.exe tools\build_catalog.py
+   .\.venv\Scripts\python.exe tools\audit_catalog.py
+   .\.venv\Scripts\python.exe tests\run_tests.py
+   .\.venv\Scripts\python.exe tools\render_preview.py
+   .\.venv\Scripts\python.exe tools\package_release.py --tag v0.5.1
+
+   Change the tag example to match the version you are actually releasing.
+5. Open dist. Expect UpgradeCrossroads-v0.5.1-forever.zip for this version.
+6. Extract that ZIP into a temporary folder. It must contain one top-level
+   UpgradeCrossroads folder with its TOC directly inside. Do not upload the
+   full development ZIP as the player install asset.
+7. Install and test the ZIP you just built, not an older installed folder.
+8. Push the source commit and wait for the repository's checks to finish.
+9. On GitHub open the repository -> Releases -> Draft a new release.
+10. Choose/create the matching tag, such as v0.5.1, on the tested commit.
+11. Give it a title and notes explaining features, known limits and supported
+    client. Attach the install-only -forever.zip from dist.
+12. Save as a draft until the asset and notes are correct. For an experimental
+    test release, mark it as a prerelease; normal stable users may not receive
+    prereleases automatically. Publish when you are ready to distribute it.
+13. Keep older release assets available for rollback. Do not silently replace
+    a released ZIP with different code under the same version number.
+
+GitHub's automatically generated source-code ZIP is different from your
+install-only asset. Upload the asset generated by package_release.py.
+
+PART 9: ENABLE AUTOMATIC DELIVERY FOR USERS
+
+1. Install WowUp from https://wowup.io/ and select the Forever client.
+2. Use Get Addons -> Install from URL with your published GitHub repository
+   page. Use your actual owner/repository URL, not an invented example URL.
+3. Install the project and confirm the version matches the release.
+4. In My Addons, right-click Upgrade Crossroads and enable Auto Update.
+5. Keep WowUp running to let it check. After a release is installed, restart
+   WoW to load it. A direct ZIP URL has no version feed in WowUp.
+6. Test the update path using a genuine subsequent version, not a renamed
+   duplicate. Confirm existing hunts/settings survive that update.
+
+CurseForge distribution can be added later through its author project flow.
+Keep the same canonical addon folder. Do not invent project IDs in the TOC.
+Add a real provider ID only after the service assigns it.
+
+PART 10: REFRESH THE DATA RESPONSIBLY
+
+An addon manager delivers the files you release. It cannot discover all new
+items, fix a moved quest giver or turn an old catalog into current evidence.
+QuestieDB updates can improve its location reads without refreshing our item
+catalog or weights. These are separate maintenance jobs.
+
+1. Run tools\audit_catalog.py. Read the snapshot date, age, Classic fallback
+   count and entrance coverage. "All bundled dungeon links have an approach"
+   does not mean every boss or quest has exact interior coordinates.
+2. Inspect the upstream Polestar/ForeverLevelingBiS data and its notices. Find
+   the actual data snapshot date. A new Polestar commit can still carry the
+   same old item snapshot. If the source remains old, seek a maintained,
+   appropriately licensed source rather than advancing the date label.
+3. For an intentional refresh from the same supported source format, review
+   the commit, its license and third-party notices, then copy its FULL commit
+   SHA. Decide which declared snapshot date you expect.
+4. Run the refresher using real values. This is a command template; replace
+   both placeholders before running it:
+
+   .\.venv\Scripts\python.exe tools\refresh_source.py --commit FULL_40_CHARACTER_SHA --expect-snapshot YYYY-MM-DD --reviewed-licenses
+
+   The flag records your review; a substring check in a script is not a legal
+   review. The tool stages all downloads and checks the expected data date,
+   notice shape and entrance schema before replacing the local inputs. It
+   does not publish anything. A changed upstream path/schema needs integration
+   work; do not bypass checks merely to get a ZIP.
+5. Rebuild. The generator validates source-lock hashes and uses the upstream's
+   declared date. Do not hand-edit generated runtime tables to appear fresh.
+6. Run the audit again. Review the diff: added/removed items, changed stats,
+   wrong-faction rewards, source counts, renamed zones and coordinate frames.
+7. Update SOURCES.md and THIRD_PARTY_NOTICES.txt as necessary, plus the changelog
+   and any documentation counts. Do not discard prior attribution.
+8. Run automated checks and live-test affected content. Choose sample cases
+   from every changed source type and test any renamed/moved entrance.
+9. Publish a new version through Part 8. Let the addon manager deliver it.
+
+For a strict data-age gate, run audit_catalog.py --max-age 45 --strict.
+That is a chosen review threshold, not proof that younger data is accurate.
+A code hotfix can retain an older honestly labeled catalog while you work on
+data updates; explain that limit in the release notes.
+
+PART 11: A SUSTAINABLE MAINTENANCE ROUTINE
+
+Each work session:
+  Pull changes, work on one issue, run the relevant checks, live-test the
+  affected flow, commit and push. Keep a short record of what was validated.
+
+After a WoW patch:
+  Run /uc status, test loading/API errors, direct item tracking, map actions,
+  quest advancement and reload persistence. Compare changed items against
+  their real tooltips. A higher TOC interface number alone does not fix an
+  incompatible API.
+
+Weekly while actively supporting the addon:
+  Review issues and upstream data changes, run the data audit, verify reported
+  location errors and decide whether a release is needed. Do not release just
+  to change a date. Keep source age and known gaps visible.
+
+Before every release:
+  Match versions, run checks, test the packaged ZIP in game, verify update
+  delivery and saved-data compatibility, then publish notes and retain rollback.
+
+Monthly or after major changes:
+  Check optional-provider compatibility, dependency updates, performance,
+  licenses and backup recovery. Bump pinned development packages in a branch,
+  run the checks and Windows setup again, then merge deliberately.
+
+When a real user reports a bug:
+  Collect addon version, client build, item/source IDs, exact clicks and error
+  text. Reproduce. Add a regression case that would fail for that behavior.
+  Apply the smallest justified fix, validate it in game, and release a new
+  patch version. Label provider/data errors separately from UI/code errors.
+
+When changing saved-data structure:
+  Back up a real test character's saved data, add a migration, retain the old
+  hunts/notes and check reloads. The current schema is 2. Never reset a whole
+  player's database just because new fields were added.
+
+If a release breaks:
+  Withdraw its recommendation, publish a corrected NEW version, and direct
+  affected users to a previous known working ZIP if necessary. Preserve WTF
+  data. Restore a source commit in development rather than deleting history.
+
+For indefinite support:
+  Keep source, release history, data provenance and the test procedure in the
+  repository so another maintainer can take over. Schedule your own regular
+  review time. Continuous availability requires an owner; no workflow here
+  guarantees unattended compatibility with every future WoW patch.
+
+REFERENCE LINKS
+VS Code Python setup:
+https://code.visualstudio.com/docs/python/python-tutorial
+Python environments:
+https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/
+GitHub Desktop:
+https://docs.github.com/en/desktop/overview/getting-started-with-github-desktop
+GitHub releases:
+https://docs.github.com/en/repositories/releasing-projects-on-github/managing-releases-in-a-repository
+WowUp repository installation and Forever asset names:
+https://wowup.io/guide/get-addons/overview
+WowUp automatic updates:
+https://wowup.io/guide/my-addons/addons
+QuestieDB's public API:
+https://github.com/Questie/QuestieDB/blob/master/docs/api.md
+
+The public provider interfaces can change. Recheck these primary references
+when maintaining an integration rather than assuming this guide stays exact
+forever. Nothing in this package has been published to your accounts for you.
+
+
+UI RELEASE 0.5.1: SHARED SHELL AND CLIENT SCREENSHOT REGRESSIONS
+- Main.lua owns W.Page, ShowPage and LayoutPages. Gear/Hunts/Settings/Help/editor
+  must remain children of pageHost. Never create another UIParent window for a
+  settings or editor page. Only the main shell and tracker call W.Resizable.
+- Screenshot evidence showed our old button backdrops and duplicate labels
+  competing with the native template. W.Button now uses GetFontString, no
+  custom backdrop, single-line text, and GetStringWidth/GetStringHeight sizing.
+  A template name alone is not a visual test. Check actual client art on release.
+- Do not replace native close/resize glyphs with tiny text labels again.
+- WHITE8X8 backgrounds make opacity explicit. Avoid old dialog background paths
+  as a functional dependency. Preserve text alpha when changing surface alpha.
+- Keep body text plain and outlines off by default. Titles can use fantasy type.
+  Main list choices are rows, not walls of filled buttons.
+- IconRound.tga and LogoRound.tga use 32-bit RGBA; transparent corners are a
+  tested property. tools/prepare_logo.py --check compares them with the round
+  PNG master. Preserve that alpha when converting or resizing.
+- Regression QA: cycle every page, close/reopen, edit/cancel a location, change
+  scale/font size, type a hunt note and /reload. Check only one page is visible
+  and no page creates a floating settings window.

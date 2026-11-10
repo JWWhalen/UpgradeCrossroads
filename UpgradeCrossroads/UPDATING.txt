@@ -1,0 +1,72 @@
+KEEPING UPGRADE CROSSROADS CURRENT
+
+This build has no hosted update feed. Installing this ZIP does not register
+it with CurseForge or WowUp, and the addon does not download new code or a
+new catalog from inside the game.
+
+WHAT ALREADY REFRESHES WHILE YOU PLAY
+- Which equipment you have equipped.
+- Your level and completed quest history used by the filters.
+- Item ownership for saved hunts (bags and equipped items).
+- Client-loaded names, icons and tooltips where available.
+
+WHAT STILL NEEDS A MAINTAINED DATA RELEASE
+- The bundled equipment catalog and its scoring stats.
+- New items and changed quest rewards or boss-drop sources.
+- Source coordinates, prerequisite chains and actual availability.
+- Improved scoring models and bug fixes.
+
+The catalog remains the 2026-10-13 snapshot described in SOURCES.md. Adding
+a minimap shortcut has not refreshed that database. Known catalog items use
+snapshot stats for comparable scoring; the real tooltip can be newer.
+
+AUTOMATIC DELIVERY FOR THE FINISHED ADDON
+1. Give the project a maintained release source, such as CurseForge or a
+   GitHub repository with versioned, installable ZIP releases.
+2. Publish releases that contain both the updated addon and rebuilt data.
+3. Install through an addon manager using the project/repository page.
+4. In WowUp, right-click Upgrade Crossroads and select Auto Update. Keep
+   WowUp running to let it check. Restart WoW after installing a release.
+
+WowUp documents GitHub release installs and a Forever ZIP naming convention
+ending in -forever. A direct ZIP URL is a one-time install, not an update feed.
+The present project has not been published, so no hosted URL is supplied.
+
+https://wowup.io/guide/get-addons/overview
+https://wowup.io/guide/my-addons/addons
+
+DATA MAINTENANCE
+The author must first choose and verify a sufficiently current, licensed data
+source. Refreshing the existing pinned inputs without checking their original
+snapshot date does not make them current. Rebuild with tools/build_catalog.py,
+run tests/run_tests.py, update provenance labels, then publish a new release.
+Fresh source coverage cannot be guaranteed simply because an updater says
+the addon is on its latest release. New or undiscovered game content may
+remain unknown to any database.
+
+UPDATING THIS MANUAL BUILD
+Close WoW. Replace the installed UpgradeCrossroads folder with the new one.
+Keep your WTF folder: it contains your saved hunts and settings. Do not copy
+the developer tools, tests or research folders into AddOns.
+
+MINIMAP SHORTCUT
+Left-click: open/close the planner.
+Right-click: open My hunts.
+Drag: move the shortcut around the minimap.
+/uc minimap hide     Hide it
+/uc minimap show     Restore it
+/uc minimap reset    Restore its default position
+
+GEAR-LOCATION WAYPOINTS
+Click an item or Track to start the persistent guide. Show on map is on each
+card; there is no need to add the displayed item again. Active quest guidance,
+optional installed QuestieDB and bundled outdoor dungeon approaches supply
+locations where known. The source selector stays on the item card.
+Missing locations remain explicit. Set location in the guide preselects the
+item/source and saves a correction. It does not replace the item catalog or
+prove the underlying acquisition data is current.
+
+FULL MAINTENANCE PROCEDURE
+Read DEVELOPMENT_AND_MAINTENANCE.txt in the full development package. It covers
+Windows setup, the edit/test/install loop, live QA, GitHub history, release
+packaging, WowUp delivery, reviewed source refreshes and ongoing maintenance.

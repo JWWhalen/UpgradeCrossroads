@@ -1,0 +1,30 @@
+{
+  "commit": "9013704545b81d3b4a0117712228861b7bc921f5",
+  "snapshot": "2026-10-13",
+  "files": {
+    "Forever.lua": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/addon/Polestar_ItemDB/Forever.lua",
+      "sha256": "dd440d4e7548ddce73de91d39e8e69dc201ff8f604b57f11ce609242e33fa163"
+    },
+    "Items.lua": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/addon/Polestar_ItemDB/Items.lua",
+      "sha256": "243fcb5b45960250043137b9a3ffb8e7b445ee985433e08b0539b41f890af6ae"
+    },
+    "LICENSE": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/LICENSE",
+      "sha256": "30c65d4d95a34bb3226a6a67d7b03ac6a70ad5d64bb7064e7c74432d5903795f"
+    },
+    "LICENSE-DATA.txt": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/addon/Polestar_ItemDB/LICENSE-DATA.txt",
+      "sha256": "c07a85df96eb267627cef2469729c75c15ab205adcf1a918bdcb4d8b4048661b"
+    },
+    "THIRD_PARTY.md": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/THIRD_PARTY.md",
+      "sha256": "9041c4a91930a2246f86553fef2180dc30d26560e04861eae9c0cf0bb83b6a55"
+    },
+    "navigation/entrances.json": {
+      "url": "https://raw.githubusercontent.com/fitzforge/polestar/9013704545b81d3b4a0117712228861b7bc921f5/data/codex/entrances.json",
+      "sha256": "f7e7d280567084b339c333debf4b099e3ce8c4d8cf9daacb133907307895f685"
+    }
+  }
+}

@@ -1,0 +1,7 @@
+Circular minimap emblem
+Built-in image edit, 2026-11-08, from UpgradeCrossroads-Logo.png.
+Request: preserve the gold/teal three-way crossroads, sword detail, blue and
+violet side arrows; replace the rounded-square container with a circular
+antique-gold ring and truly transparent outer corners. Keep the full emblem
+inside the circle with a small margin. No text and no square silhouette.
+Master: UpgradeCrossroads-Round.png. Runtime derivatives are RGBA TGA.

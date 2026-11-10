@@ -1,0 +1,23 @@
+## Interface: 16001
+## Title: Upgrade Crossroads
+## Notes: Compare reliable upgrades, dungeon hunts and long-term gear goals.
+## Author: FlakieGames
+## Version: 0.5.1
+## OptionalDeps: QuestieDB, Questie
+## SavedVariablesPerCharacter: UpgradeCrossroadsDB
+## IconTexture: Interface\AddOns\UpgradeCrossroads\Media\IconRound
+## Category: Quests & Leveling
+
+Core\Bootstrap.lua
+Data\Catalog.lua
+Data\Locations.lua
+Core\Rules.lua
+Core\Client.lua
+Core\Navigation.lua
+UI\Widgets.lua
+UI\Appearance.lua
+UI\Guide.lua
+UI\Main.lua
+UI\TargetEditor.lua
+UI\Minimap.lua
+Core\Init.lua

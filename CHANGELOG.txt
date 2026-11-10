@@ -1,0 +1,93 @@
+UPGRADE CROSSROADS 0.5.1
+- Gear has a faction filter with exactly Alliance, Horde and Both.
+- Defaults to the character's faction and saves the selection per character.
+- Filters faction-tagged acquisition sources; shared/untagged sources remain.
+- Source cycling follows the same selection. Switching filters preserves hunts,
+  notes and active tracking. Current class, level and other filters still apply.
+- Opposite-faction previews are clearly labeled. Their racial quests/history
+  are not checked against the logged-in character; own-faction checks remain.
+- 69 automated test groups and the existing offline layout checks pass.
+
+0.5.0
+- Main shell embeds Gear, Hunts, Settings, Help and Add item as exclusive pages.
+  Only the in-game tracker remains a separate window; page geometry is shared.
+- Removed custom native-button backdrops and duplicate labels. Action buttons
+  fit actual text metrics; equipment and item lists use understated rows.
+- Replaced tiny text chrome with native close and resize-grip art. Scale is
+  available through the corner and a Settings slider.
+- Solid controlled backgrounds, quieter colors and plain non-outlined body text
+  replace the nearly transparent/outlined default shown in the user's screenshots.
+- Circular minimap/header emblem with genuine RGBA transparency outside its rim.
+- Migration preserves hunts, notes, sources, colors and deliberate low opacity.
+- 64 automated groups, 12 offline layouts and RGBA texture checks pass. Actual
+  client template/font verification is still required; no live playtest claimed.
+
+0.4.0
+- Approved emblem replaces the minimap shortcut icon, AddOns-list icon and
+  window header emblem. Bundled 64/256px TGA assets and source PNG included.
+- Replaced the three-column dashboard with a WoW-style tabbed gear journal,
+  ranked item list and scrollable details. Direct tracking/source/chat remain.
+- Native dialog frames, inset backgrounds, red buttons and fantasy font.
+- New Appearance window: four presets, background-only opacity, custom tint,
+  accent and border colors, native picker/HEX, font choice, text sizes/outline.
+- Readable scaling defaults to whole-pixel fonts, at least 12 screen pixels,
+  and an 80-150% scale range. Larger text reflows/scrolls. Optional old compact
+  range remains available by disabling the readability guard.
+- All six windows remember geometry; settings save per character.
+- 59 Lua test groups, two TGA checks and twelve offline layout fixtures pass.
+- Data snapshot remains 2026-10-13. No live playtest or data refresh claimed.
+
+0.3.1
+- Drag the bottom-right // corner to scale the whole window, including text,
+  buttons and content. Works on planner, tracker, hunts, help and editor.
+- Keep Shift held when starting the drag to resize/reflow the layout instead.
+- Corner scaling keeps the opposite corner fixed and accounts for UI scale.
+  Scale is bounded from 50% to 150% and saved separately for each window.
+- Releasing the mouse, hiding a window or resetting it ends an active gesture.
+- Updated tooltips, footer and guides. Expanded to 52 automated test groups.
+
+0.3.0
+- Redesigned native UI with sans-serif type, calmer panels, colored path
+  accents, clear item hierarchy and purpose snippets throughout the addon.
+- Item/source/zone search within the selected slot; inline source switching,
+  item paging and direct tracking remain on the item cards.
+- Chat buttons on cards, equipped gear, saved hunts and the tracker. Shift-
+  click and right-click also insert links into unsent chat drafts. Cached
+  links use the client item API; pending links ask for a retry after loading.
+- All five windows support native layout resizing, independent scale controls,
+  dragging and saved geometry. Compact tracker details scroll. Help and hunts
+  remain scrollable; /uc resetwindows restores defaults without losing hunts.
+- The tracker X dismisses it until /uc guide or another Track action.
+- Saved hunts can hide obtained items; editing notes survives layout changes.
+- Removed the character-screen Crossroads button and its loader hook.
+- Preserved the separate close-button hit region on every window.
+- Expanded to 49 Lua 5.1 test groups and seven offline layout fixtures, including
+  each window at minimum size. No live client playtest is claimed.
+- Catalog remains the 2026-10-13 snapshot; no gear/source refresh in this release.
+
+0.2.1
+- Fixed the main window's X button: the title-bar drag area no longer covers
+  its corner, and the button has an explicit higher frame level/click binding.
+- Added a regression check for the separate hit regions and closing/reopening
+  through the X button without using Escape.
+
+0.2.0
+- Click a displayed item's name/icon or Track to start a persistent guide.
+- Show on map is now on each card. Missing locations fall back to the guide.
+- Switch between eligible known item sources directly on the card.
+- Guide shows progress while the main planner is closed and survives reload.
+- Native quest objectives, installed QuestieDB locations and known prerequisite
+  steps can supply navigation. Ambiguous branches are explicitly called out.
+- Added 33 outdoor entrance/approach mappings from attributed Polestar facts.
+- Missing locations can be filled in a preselected source popup without
+  creating a duplicate custom item or replacing the item's other sources.
+- Preserves unrelated user waypoints; guide changes do not continuously seize
+  navigation on ordinary inventory events.
+- Added Windows development installer, release packager, test workflow and a
+  detailed beginner development/maintenance guide.
+
+0.1.1
+- Minimap shortcut with left/right clicks, dragging and saved position.
+
+0.1.0
+- Initial three-path recommendation screen and saved hunt checklists.

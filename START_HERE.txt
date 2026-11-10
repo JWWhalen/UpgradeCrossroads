@@ -1,0 +1,86 @@
+UPGRADE CROSSROADS 0.5.1 - START HERE
+
+INSTALL
+1. Close WoW completely. Extract UpgradeCrossroads-v0.5.1-forever.zip.
+2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
+   replacing the previous files. Keep your WTF folder and saved hunts.
+3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
+   UI and Media must sit directly beside that TOC, without another folder level.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.5.1.
+5. Run /uc resetwindows once if you want the new default size and position.
+
+ONE MAIN WINDOW
+Gear, Hunts, Settings, Help and Add item are pages in the same window. Switching
+pages hides the previous page, so settings cannot sit behind the gear list.
+The pages share position, size, scale and one native close button. The small
+in-game tracker stays separate and hides while the main window is open.
+
+The circular minimap emblem has transparent corners, with no square background.
+Left-click opens/closes the main window, right-click opens Hunts, and dragging
+moves the shortcut around the minimap. The emblem also appears in the header.
+
+CLEANER CONTROLS
+- Equipment and item choices use understated list rows instead of gold buttons.
+- Plain readable body text is the default, without heavy outlines. Fantasy type
+  stays in titles. Font choice, text size and optional outlines remain in Settings.
+- Native action buttons use their own font string and text measurements. Custom
+  button backdrops and duplicate labels are removed.
+- The main background is a solid, controlled color instead of depending on an
+  old dialog texture. Default opacity is 100%; reduce it in Settings if desired.
+- The tiny A-/A+ and text-based close/resize controls are gone. X uses the native
+  close template, and the lower-right corner uses a resize-grip texture.
+
+FACTION FILTER
+On Gear, click Faction to cycle Alliance, Horde and Both. The first selection
+uses your character's faction, and your choice saves per character. Shared or
+untagged sources stay visible. Class, level, solo/crafting/AH and search filters
+still apply. Changing the view does not remove hunts or change their sources.
+
+Opposite-faction quests can be inspected for another character, with a clear
+unavailable-to-this-character label. Their racial quests/history are not tested
+against the logged-in character; its class/gear rules remain. Current-faction
+race and completed-quest checks are retained. Sources are tagged from the dated
+catalog; missing faction data is not guessed from place or NPC names.
+
+USING IT
+Choose Gear, a profile, equipment slot and Quest & craft / Dungeons / Future gear.
+Choose an item from the list to inspect it. Click the large name/icon or Track
+for immediate guidance. Select another eligible source beside that item.
+Search finds item, source and zone names within the current slot and filters.
+
+Chat, Shift-click or right-click inserts an unsent item link into a chat draft.
+You choose the channel and send it. Ctrl-click previews gear. If a link is not
+cached, wait and click Chat again. Hunts retains notes and checklist progress.
+Add item and Set location use an embedded editor, with a Cancel button to return.
+
+SETTINGS AND SCALE
+Settings has four presets, background opacity, custom background/accent/border
+colors, a native color picker or HEX, font/text size, outlines and a scale slider.
+The native color picker is a system dialog; the settings page remains in place.
+
+Drag a title to move its window. Drag the lower-right grip to scale. Hold Shift
+when starting the drag to resize the layout instead. Main pages all share that
+geometry; the tracker has its own. Compact content scrolls instead of overlapping.
+Readable mode keeps text at least 12 screen pixels (14 at Largest), with an
+80-150% window scale range. Turning it off allows 50-150%; tiny text stays tiny.
+
+Existing hunts, notes, weights, custom sources, map corrections and custom colors
+are retained. Migration selects the new plain text/no-outline defaults and makes
+an old default 95% background fully opaque; a deliberately lower opacity is kept.
+Restore appearance resets look preferences only. /uc resetwindows resets geometry.
+
+FIRST LIVE CHECK
+1. Confirm the minimap emblem is round and X is a normal close icon.
+2. Switch all five pages. Only one should appear, with no gear visible behind it.
+3. Try the main window and tracker at your normal UI scale and Largest text.
+4. Try source selection, Track/map, Chat, hunt notes and editor Cancel.
+5. Change settings, close/reopen the window and /reload. Check everything saves.
+
+69 automated test groups, circular RGBA assets and 12 offline layout fixtures pass.
+The attached screenshots exposed issues the old offline skin could not predict;
+actual client font/template rendering still needs an in-game pass for this build.
+PREVIEW.png and GUIDE_PREVIEW.png are labeled offline illustrations, not live QA.
+Catalog remains the 2026-10-13 snapshot. This is a UI and asset release.
+
+The full source archive includes tests, tools, logo masters and the maintenance
+guide. Runtime needs no Python. Do not copy development files into AddOns.
