@@ -1,0 +1,21 @@
+package-as: UpgradeCrossroads
+
+manual-changelog:
+  filename: CHANGELOG.txt
+  markup-type: text
+
+ignore:
+  - .github
+  - art
+  - research
+  - tests
+  - tools
+  - dist
+  - requirements-dev.txt
+  - START_HERE.txt
+  - VALIDATION.md
+  - DEVELOPMENT_AND_MAINTENANCE.txt
+  - CHANGELOG.txt
+
+move-folders:
+  UpgradeCrossroads/UpgradeCrossroads: UpgradeCrossroads
