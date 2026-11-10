@@ -1,0 +1,115 @@
+name: CurseForge release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v[0-9]*'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: curseforge-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install development packages
+        run: python -m pip install -r requirements-dev.txt
+
+      - name: Rebuild catalog
+        run: python tools/build_catalog.py
+
+      - name: Audit catalog
+        run: python tools/audit_catalog.py
+
+      - name: Run addon tests
+        run: python tests/run_tests.py
+
+      - name: Check logo assets
+        run: python tools/prepare_logo.py --check
+
+      - name: Check window layouts
+        run: python tools/review_layouts.py
+
+      - name: Validate version and build install ZIP
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+          IS_TAG_RELEASE: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/') }}
+        run: |
+          if [ "$IS_TAG_RELEASE" = "true" ]; then
+            python tools/package_release.py --tag "$RELEASE_TAG"
+          else
+            python tools/package_release.py
+          fi
+
+      - name: Test CurseForge packaging without uploading
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -d -p 1793236 -w 0 -a 0 -n "{package-name}-{project-version}-forever"
+
+      - name: Check packaged folder structure
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import zipfile
+
+          archives = list(Path(".release").glob("*-forever.zip"))
+          assert len(archives) == 1, "Expected one release ZIP"
+          with zipfile.ZipFile(archives[0]) as archive:
+              assert archive.testzip() is None, "Damaged ZIP"
+              names = archive.namelist()
+              assert all(
+                  name.startswith("UpgradeCrossroads/")
+                  for name in names
+              ), "Unexpected top-level folder"
+              assert (
+                  "UpgradeCrossroads/UpgradeCrossroads.toc" in names
+              ), "TOC is missing or nested incorrectly"
+              assert not any(
+                  name.startswith("UpgradeCrossroads/" + folder + "/")
+                  for name in names
+                  for folder in ("tools", "tests", "research", ".github", "art")
+              ), "Development folders included"
+          print("Release ZIP structure passed")
+          PY
+
+      - name: Require CurseForge token
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+        run: |
+          if [ -z "$CF_API_TOKEN" ]; then
+            echo "::error::The CF_API_TOKEN repository secret is missing."
+            exit 1
+          fi
+
+      - name: Upload tagged release to CurseForge
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+        uses: BigWigsMods/packager@v2
+        with:
+          args: -p 1793236 -w 0 -a 0 -n "{package-name}-{project-version}-forever"
+        env:
+          CF_API_TOKEN: ${{ secrets.CF_API_TOKEN }}
+
+      - name: Save packaged addon
+        uses: actions/upload-artifact@v4
+        with:
+          name: UpgradeCrossroads-release-package
+          path: .release/*-forever.zip
+          if-no-files-found: error
