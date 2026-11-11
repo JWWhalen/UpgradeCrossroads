@@ -39,7 +39,11 @@ function XC:LayoutNavigation()
 end
 function XC:LayoutPages()
     local f=self.window; if not f then return end
-    f.pageHost:SetSize(f:GetWidth()-36,f:GetHeight()-154)
+    f.catalog:SetWidth(f:GetWidth()-44); f.catalog:SetHeight(0)
+    local footerHeight=f.catalog:GetStringHeight(); f.catalog:SetHeight(footerHeight)
+    at(f.catalog,22,f:GetHeight()-footerHeight-9)
+    local pageTop=f.pageTop or 135; at(f.pageHost,18,pageTop)
+    f.pageHost:SetSize(f:GetWidth()-36,f:GetHeight()-pageTop-footerHeight-15)
     for _,page in pairs(f.pages) do page:SetSize(f.pageHost:GetWidth(),f.pageHost:GetHeight()); page:ApplyLayout() end
 end
 function XC:SelectPath(key) self.db.path=key; self:Render() end
@@ -76,6 +80,7 @@ function XC:BuildUI()
         XC:LayoutNavigation()
         XC:LayoutPages()
     end)
+    W.OrnateShell(f)
     f:HookScript("OnShow",function() XC:Refresh(); XC:RenderGuide() end)
     _G.UpgradeCrossroadsWindow=f
     f.activePage="gear"; f.pages.gear:Show()
@@ -268,7 +273,8 @@ function XC:RenderHunts()
             r.name=at(W.Text(r,"",16,self.Colors.text,500),16,16); r.name:SetHeight(42)
             r.itemButton=CreateFrame("Button",nil,r); at(r.itemButton,16,12); r.itemButton:SetSize(width-130,44); r.itemButton:RegisterForClicks("LeftButtonUp","RightButtonUp")
             r.source=at(W.Text(r,"",11,self.Colors.muted,500),16,60); r.source:SetHeight(33)
-            r.remove=W.Button(r,"Remove",80,24); r.map=W.Button(r,"Track",80,27); r.chat=W.Button(r,"Chat",80,24)
+            r.remove=W.Button(r,"Unsave",80,24); r.map=W.Button(r,"Track",80,27); r.chat=W.Button(r,"Chat",80,24)
+            W.Hint(r.remove,"Delete this saved hunt and its notes. To hide a suggestion and keep its notes for restoration, use Remove in the Journal.")
             r.checks={}
             for j=1,3 do
                 local check=at(W.Toggle(r,"",function(v) if r.pin then r.pin.checks[j]=v; XC:RenderGuide() end end),13,98+(j-1)*27)
@@ -321,14 +327,14 @@ function XC:BuildAbout()
     local scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate"); scroll:SetPoint("TOPLEFT",20,-12); scroll:SetPoint("BOTTOMRIGHT",-32,12)
     local body=CreateFrame("Frame",nil,scroll); body:SetSize(720,1120); scroll:SetScrollChild(body)
     local sections={
-        {"UPGRADE PATHS","The tabs show Quest & craft, Dungeons and Future gear. Choose equipment on the left. Faction cycles Alliance, Horde and Both; shared or untagged sources stay visible. Opposite-faction sources are labeled as unavailable to this character. Your class is shown above a specialization selector. Click Spec to cycle your class's presets. /uc weights edits only that spec. Filters remove sources you do not want; search finds item, source and zone names within the selected slot."},
+        {"GEAR JOURNAL","Choose your spec, then select an item under an equipment heading. Its parchment keeps the source, reward, Track, map, Remove and Chat together. Completed records observed ownership; Removed restores hidden suggestions while keeping notes. Search covers all slots. Compare retains detailed single-slot paths."},
         {"QUEST & CRAFT / DUNGEONS / FUTURE GEAR","Reliable shows quest rewards and crafts with a defined outcome. Dungeon shows eligible group sources. Long-term includes future gear up to level 60. These are scored suggestions, not verified BiS rankings."},
         {"TRACK + MAP / TRACK + GUIDE","Choose an item from the list, then click its name or Track button to save it and start guidance immediately. Known destinations appear on the world map. Dungeon pins show outdoor entrances or approaches, not interior boss routes. Unknown coordinates remain clearly labeled."},
         {"CHAT / ITEM SHORTCUTS","Chat, Shift-click or right-click inserts an item link into your chat draft. You choose the channel and press Enter to send. Ctrl-click previews it in the dressing room. Uncached links may need a second click after data loads."},
         {"SAVED HUNTS / ACTIVE TRACKER","Hunts keep your checklist and notes between sessions. Track resumes a hunt. The separate tracker shows the next step while the planner is closed. Preparation checkboxes are manual; bag ownership is detected automatically. Stop tracking keeps the saved hunt."},
         {"CUSTOM ITEM / SET LOCATION","Use Custom item for gear absent from the catalog. Set location on the tracker fills in the existing item and source; you only enter a map ID and X/Y percentages. Personal locations and targets save for this character."},
         {"APPEARANCE","The Settings page has saved style controls: Classic, Alliance, Horde or Midnight; background opacity; custom background, heading and border colors; two fonts, three text sizes and outlines. Readable scaling keeps text at least 12 screen pixels and window scale at least 80%."},
-        {"WINDOWS / CONTROLS","The Gear, Hunts, Settings, Help and Add item pages share one window. Drag the title to move it, or the bottom-right grip to scale it. Shift-drag that grip to resize the layout. Settings also has a scale slider. The tracker remains separate. Close the planner with X or Escape. /uc guide reopens an active tracker; /uc resetwindows restores window defaults."},
+        {"WINDOWS / CONTROLS","Journal, Compare, Hunts, Settings, Help and Add item share one window. Drag the title to move it, or the bottom-right grip to scale it. Shift-drag that grip to resize the layout. Settings also has a scale slider. The tracker remains separate. Close the planner with X or Escape. /uc guide reopens an active tracker; /uc resetwindows restores window defaults."},
         {"SCORING / DATA","Spec presets add weighted base stats using editable role weights. Specs with the same role can share weights; these are not public-guide BiS rankings. Procs, set bonuses, talent multipliers, stat caps and encounter effects are not simulated. Different weapon hand setups do not receive an upgrade delta. /uc weights edits your profile. Inspect tooltips before committing."},
         {"CATALOG / LOCATION COVERAGE","3,529 items; catalog snapshot "..self.CatalogMeta.date..". Forever overrides and source facts are bundled from Polestar; other entries are marked Classic baseline. New or changed items can be missing. Native quest guidance and optional QuestieDB supply known quest locations; ambiguous chains still require checking. No live AH prices or exact walking routes are supplied."},
     }

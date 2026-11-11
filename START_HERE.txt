@@ -1,16 +1,16 @@
-UPGRADE CROSSROADS 0.5.3 - START HERE
+UPGRADE CROSSROADS 0.6.5 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.5.3-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.6.5-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.5.3.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.6.5.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
-Gear, Hunts, Settings, Help and Add item are pages in the same window. Switching
+Journal, Compare, Hunts, Settings, Help and Add item share one window. Switching
 pages hides the previous page, so settings cannot sit behind the gear list.
 The pages share position, size, scale and one native close button. The small
 in-game tracker stays separate and hides while the main window is open.
@@ -21,8 +21,8 @@ moves the shortcut around the minimap. The emblem also appears in the header.
 
 CLEANER CONTROLS
 - Equipment and item choices use understated list rows instead of gold buttons.
-- Plain readable body text is the default, without heavy outlines. Fantasy type
-  stays in titles. Font choice, text size and optional outlines remain in Settings.
+- WoW's standard font is the default throughout the addon, without heavy
+  outlines. Plain readable text, text size and outlines remain options in Settings.
 - Native action buttons use their own font string and text measurements. Custom
   button backdrops and duplicate labels are removed.
 - The main background is a solid, controlled color instead of depending on an
@@ -31,7 +31,7 @@ CLEANER CONTROLS
   close template, and the lower-right corner uses a resize-grip texture.
 
 FACTION FILTER
-On Gear, click Faction to cycle Alliance, Horde and Both. The first selection
+In Journal, open Filters and cycle Alliance, Horde and Both. The first selection
 uses your character's faction, and your choice saves per character. Shared or
 untagged sources stay visible. Class, level, solo/crafting/AH and search filters
 still apply. Changing the view does not remove hunts or change their sources.
@@ -43,7 +43,7 @@ race and completed-quest checks are retained. Sources are tagged from the dated
 catalog; missing faction data is not guessed from place or NPC names.
 
 CLASS AND SPEC
-Your class is detected automatically. On Gear, click the spec button to cycle
+Your class is detected automatically. In Journal, click the spec button to cycle
 only that class's choices. These are manual choices, not talent auto-detection.
 There are 29 choices across nine classes, including Survival melee/ranged and
 Feral cat/bear. Specs sharing a role share starter weights, not independently
@@ -56,10 +56,14 @@ weapon DPS does not count toward ranged Hunter stat sticks. Feral cat/bear do
 include main-hand DPS, reflecting Forever's form weapon-DPS rule.
 
 USING IT
-Choose Gear, a spec, equipment slot and Quest & craft / Dungeons / Future gear.
-Choose an item from the list to inspect it. Click the large name/icon or Track
-for immediate guidance. Select another eligible source beside that item.
-Search finds item, source and zone names within the current slot and filters.
+The Journal opens first. Select any ranked item under an equipment heading to
+read its parchment description, source and reward. Track, Show on map, Remove
+and Chat stay with that item. Click its reward for immediate tracking. Source
+cycles alternate eligible sources. Search covers items and sources in all slots.
+Active lists suggestions, Completed records observed ownership, and Removed
+retains hidden suggestions for restoration without deleting their saved notes.
+Click a slot heading to collapse it; the bottom control sets picks per slot.
+Compare keeps the old detailed single-slot view and its three acquisition paths.
 
 Chat, Shift-click or right-click inserts an unsent item link into a chat draft.
 You choose the channel and send it. Ctrl-click previews gear. If a link is not
@@ -78,14 +82,16 @@ Readable mode keeps text at least 12 screen pixels (14 at Largest), with an
 80-150% window scale range. Turning it off allows 50-150%; tiny text stays tiny.
 
 Existing hunts, notes, weights, custom sources, map corrections and custom colors
-are retained. Migration selects the new plain text/no-outline defaults and makes
-an old default 95% background fully opaque; a deliberately lower opacity is kept.
+are retained. Older font settings switch once to the WoW default; reselect Plain
+in Settings if preferred. Subsequent explicit font choices survive reloads. The
+earlier migration makes an old default 95% background fully opaque; a deliberately
+lower opacity is kept.
 Restore appearance resets look preferences only. /uc resetwindows resets geometry.
 
 FIRST LIVE CHECK
 1. Confirm your detected class and cycle its spec choices. Verify only your
    class appears; try different roles if your class supports them.
-2. Switch all five pages. Only one should appear, with no gear visible behind it.
+2. Switch all six pages. Only one should appear, with no gear visible behind it.
 3. Try the main window and tracker at your normal UI scale and Largest text.
 4. Try source selection, Track/map, Chat, hunt notes and editor Cancel. On a
    Hunter, confirm thrown weapons are absent from ranged recommendations.
@@ -95,7 +101,7 @@ Automated Lua checks, circular RGBA assets and offline layouts are included.
 The attached screenshots exposed issues the old offline skin could not predict;
 actual client font/template rendering still needs an in-game pass for this build.
 PREVIEW.png and GUIDE_PREVIEW.png are labeled offline illustrations, not live QA.
-Catalog remains the 2026-10-13 snapshot. This is a profile and filtering update.
+Catalog remains the 2026-10-13 snapshot. This revision changes the default font.
 
 The full source archive includes tests, tools, logo masters and the maintenance
 guide. Runtime needs no Python. Do not copy development files into AddOns.

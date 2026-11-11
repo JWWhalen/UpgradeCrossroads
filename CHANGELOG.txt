@@ -1,3 +1,63 @@
+v0.6.5
+- Made WoW's standard font the default for addon text, controls and the tracker.
+  The client supplies its font; no font file is bundled. Plain remains optional.
+- Older font settings switch once to the WoW default. Reselect Plain in Settings
+  if preferred; subsequent explicit choices persist across reloads.
+- Kept readable scaling, darker parchment, the continuous scene and item actions.
+- No catalog refresh, release tag or CurseForge upload is part of this update.
+
+v0.6.4
+- Deepened the journal scenery and restored a richer, darker aged-parchment
+  palette using color-only glazes over the existing continuous panorama.
+- Kept the shared painting, pane geometry, item actions and saved preferences.
+- No artwork replacement, catalog refresh or publication is part of this update.
+
+v0.6.3
+- Replaced the two pane illustrations with one continuous original panorama
+  spanning the list, center gap and detail pane. Terrain continues across the
+  middle instead of restarting as a second copy of the scene.
+- The same wide painting fades from dark cool scenery on the left into faint
+  sepia terrain under a pale parchment wash on the right.
+- Kept borders, readable ink, item actions, appearance controls and resizing.
+- The client now ships one 1024x512 panorama texture; older separate landscape
+  and parchment exports are no longer used. Their source masters remain in art.
+- No catalog refresh, release tag or CurseForge upload is part of this update.
+
+v0.6.2
+- Added original illustrated parchment to the right journal detail pane: faint
+  sepia mountain scenery sits beneath the description, source and reward text.
+- Retained dark parchment ink, its readability opacity floor, existing item
+  actions and responsive layout. The left landscape and frame remain intact.
+- Art export checks now cover both scenery masters and their client textures;
+  offline previews show the bundled artwork on both sides of the journal.
+- No catalog refresh, release tag or CurseForge upload is part of this update.
+
+v0.6.1
+- Added original painted mountain-valley scenery behind the journal hunt list,
+  with a separate readability veil rather than permanently darkening the art.
+- Added a decorative umber title bar, brass edging and heavier native
+  dialog borders. Artwork stays behind interactive controls and resizes with
+  the shared shell; existing behavior and saved preferences are preserved.
+- Added reproducible client-texture export and CI packaging checks for the art.
+- Offline previews now display the actual bundled scenery and approximate the
+  native frame trim; they remain labeled as offline rather than live captures.
+
+v0.6.0
+- Added a quest-log-style front page: expandable gear-slot groups, ranked item
+  rows, parchment source/reward details and persistent footer actions.
+- Active, Completed and Removed lists share direct Track, Show on map, source
+  cycling, Remove/Restore and Chat actions. Clicking a reward starts its guide.
+- Ownership observations drive completion; tracking or finishing a quest alone
+  does not claim an item was obtained. Removed hunts retain notes and checks.
+- Added cross-slot name/source/zone search and 1/3/5/10 suggestions per slot.
+- Inline filters retain Alliance/Horde/Both, Solo, Crafts, AH and future goals.
+- Kept the detailed single-slot comparison under Compare and all existing pages
+  inside the shared resizable shell. No character-panel launcher was added.
+- Native Blizzard parchment and quest highlights; original Crossroads code,
+  approved logo and catalog. No GearQuest code, data or artwork is bundled.
+- Catalog remains the October 13 snapshot; model ranks are not verified BiS.
+- Offline validation is documented separately. Live client verification remains.
+
 v0.5.3
 - Replaced broad role labels with detected class and class-specific spec choices.
 - Added 29 manual choices across nine classes, including Survival melee/ranged

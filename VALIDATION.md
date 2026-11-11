@@ -1,6 +1,139 @@
-# Upgrade Crossroads 0.5.3 validation
+# Upgrade Crossroads 0.6.5 validation
 
 Target: WoW: Forever, interface 16001. Built 2026-11-10.
+
+## Native default font in 0.6.5
+
+The default font uses the client's STANDARD_TEXT_FONT when valid, falling back
+to Fonts/FRIZQT__.TTF. Body text, item rows, controls, settings and tracker text
+use the shared font handling; the Plain option retains its readable typeface.
+No client font is copied into the addon. Physical-pixel sizing, text-size options
+and dark parchment ink remain in place.
+
+Schema 6 switches older font settings once to the WoW default. Older saved Plain
+settings cannot distinguish an earlier automatic default from an explicit choice;
+users who prefer Plain can select it again. New explicit choices are saved for
+future reloads. Hunts, notes, custom colors and the darker panorama are retained.
+
+All 85 automated groups and 18 strict offline layouts pass for this revision.
+Updated assertions cover default fonts across registered text, the client font
+override and fallback, one-time migration preserving hunts and custom colors,
+Plain persistence and restoring the font default. Offline previews use
+substitute fonts and cannot prove the exact native typeface or its live-client
+rendering.
+
+## Darker journal palette in 0.6.4
+
+This visual refinement changes only the pane color glazes: deeper scenery on
+the left and richer warm-tan parchment on the right. The same continuous
+panorama, geometry, actions and saved preferences remain.
+
+All 18 layouts were freshly exported from the actual Lua UI and pass strict
+offline text checks. The default palette was visually compared with the prior
+preview. The 85-group result for 0.6.3 below remains historical evidence; the
+unchanged scoring/hunt suite was not rerun for this color-only change.
+Live-client appearance remains untested.
+
+## Continuous panorama in 0.6.3
+
+The journal uses one background texture across the list, center gap and detail
+pane. It is one uninterrupted original scene, with dark cool terrain on the
+left fading into pale parchment and faint sepia terrain on the right. Pane
+borders remain separate while their interiors reveal the shared canvas.
+Pane-local color-only washes preserve contrast for pale list text and dark
+detail ink. These tints contain no additional scene artwork.
+
+The master is art/JournalPanorama.png. The client export is
+Media/JournalPanorama.tga, 1024x512 uncompressed 32-bit RGBA.
+prepare_journal_art.py rebuilds/checks the current panorama against its master.
+The two earlier client scenery exports are removed; their original PNG masters
+and provenance notes remain as design history.
+
+The offline preview uses the actual shared image, with native border, font and
+item-icon approximations. This revision passes all 85 automated groups and 18
+strict offline layouts, plus the current panorama and approved logo export
+checks. Focused Lua checks confirm one scene texture spans both panes during
+900/1200-width resizing, with transparent pane backdrops and color-only washes.
+Default and minimum/Largest-text layouts were visually inspected. Live texture
+loading and native-client appearance remain untested.
+
+## Illustrated detail pane in 0.6.2
+
+The right journal pane uses original illustrated parchment rather than plain
+paper. Its faint sepia mountain valley is derived from the project's original
+landscape artwork. The source is art/JournalParchment.png; the client export is
+Media/JournalParchment.tga, 512x1024 uncompressed 32-bit RGBA.
+prepare_journal_art.py rebuilds/checks both scenery exports against their PNG
+masters. The right pane retains dark ink and its existing readability floor;
+item actions, scroll layout and hunt behavior are unchanged.
+
+The preview uses the bundled illustrations on both sides, while still
+approximating native frame textures, fonts and item icons. This revision passes
+all 85 automated groups and 18 strict offline layouts, including minimum sizes
+with Largest text. Both scenery exports and both logo exports pass their
+source/format checks. Focused Lua checks also cover the new paper, resize
+anchors and its opacity floor. Live texture loading remains untested.
+
+## Scenic skin revision in 0.6.1
+
+An original generated mountain landscape is shipped as a 512x1024 uncompressed
+32-bit RGBA TGA. Its source PNG is retained under art; prepare_journal_art.py
+rebuilds it and --check verifies exact pixel equality and client texture format.
+CI and tagged releases run that check. The list applies a separate dark veil.
+An ornamental shell adds native dialog borders, an umber title bar and brass
+trim without creating interactive overlay frames or changing item actions.
+Its textures reflow during normal scale/resize and appearance changes.
+
+The offline preview uses the actual bundled scenery, with native border/title
+art substitutions. Live texture loading and client-native appearance still need
+verification. This revision does not add or remove journal, scoring or hunt
+features.
+
+The scenic build passes all 85 automated groups and 18 strict offline layouts,
+including minimum geometry with Largest text and non-default UI scales. Both
+logo exports and the new landscape pass their source/format checks. Catalog
+rebuild and audit pass with the unchanged October 13 snapshot.
+
+## Quest journal revision in 0.6.0
+
+The new default Journal uses grouped equipment headings, ranked rows, native
+quest highlights and parchment item details. Active, Completed and Removed are
+views in the same page. Track, map, source selection, removal/restoration and
+unsent chat linking operate on the displayed item. Compare preserves the prior
+single-slot workflow; Hunts, Settings, Help and the editor remain shared pages.
+
+Removal preserves pin notes and checklists and stops that active tracker.
+Restoration makes the suggestion eligible for the normal rules again. Completion
+requires observed item ownership or a previously acquired pin; it does not infer
+ownership from a quest completion or a checklist. Observations persist after an
+item is sold. The list is not a complete historical collection of unseen items.
+
+The journal model indexes the catalog by inventory type before applying the
+existing scoring and eligibility rules. It retains source, faction, armor
+training, weapon setup and class restrictions. Future armor preserves the level
+40 training floor. Comparable downgrades stay excluded. Unknown comparisons are
+labeled as target model scores. Custom weights are labeled accurately.
+
+Responsive tests cover item actions, alternate sources, lifecycle persistence,
+search, collapse/expand, pick counts, filters, future requirements, page
+exclusivity and large text. Footer actions can wrap to two rows; tab widths and
+the shared footer reserve are measured from their actual fonts. The parchment
+scroll child stays separate from fixed actions. Native art previews are
+approximate substitutes and remain labeled as offline layouts.
+
+The release validation comprises 85 automated groups and 18 offline layouts.
+The extreme-size case uses a 900x720 shell, 80% addon scale, 64% global UI scale,
+Largest text and the long Hunter Survival specialization label. Explicit checks
+cover header/navigation separation, panel/intro separation, measured state tabs,
+search-row bounds and non-overlapping footer buttons. Catalog rebuild/audit and
+the approved logo texture checks also pass.
+
+No live WoW client was connected, and no in-game screenshot or playtest is
+claimed. Verify texture loading, scrolling, font rendering and actual native
+templates in game before publishing. This update does not add GearQuest's
+simulator, enchant recommendations, gamepad navigation or its item database.
+
+## Earlier validation retained below
 
 ## Evidence and changes
 

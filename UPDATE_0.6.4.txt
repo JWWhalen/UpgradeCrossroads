@@ -1,0 +1,26 @@
+UPGRADE CROSSROADS 0.6.4 - DARKER JOURNAL PALETTE
+
+The journal keeps one continuous wide painting across both panes. Color-only
+glazes deepen the scenery and restore richer warm-tan aged parchment.
+
+GAME INSTALL
+Close WoW, extract UpgradeCrossroads-v0.6.4-forever.zip and replace the existing
+UpgradeCrossroads folder in Interface/AddOns. Keep your WTF/SavedVariables.
+Restart the client. /uc status should say v0.6.4; /uc opens the darker journal.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.6.4-source-update.zip into C:\Dev\UpgradeCrossroads,
+replacing its files. It contains the complete changes from public v0.5.3 through
+v0.6.4, including the journal code, panorama and TOC. It can be applied over the
+earlier 0.6.x source updates. The install ZIP belongs in the game; the source
+update belongs in your project.
+
+If you previously copied the 0.6.1/0.6.2 files, remove the two obsolete files
+UpgradeCrossroads/Media/JournalLandscape.tga and
+UpgradeCrossroads/Media/JournalParchment.tga from your project and game addon
+folder. They are no longer used. Keep the original PNG masters under art/.
+
+Existing features, hunts and notes remain. This palette refinement does not
+replace the panorama artwork, change layout or refresh the October 13 data.
+Offline previews are not live WoW captures. No release tag or CurseForge upload
+has been created by this update.

@@ -3,8 +3,9 @@
 This is a layout preview, never a live-game screenshot. Requires Pillow.
 """
 from pathlib import Path
-import json, re, argparse
-from PIL import Image, ImageDraw, ImageFont
+from functools import lru_cache
+import json, re, argparse, math, random
+from PIL import Image, ImageDraw, ImageFont, ImageChops
 
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser()
@@ -29,7 +30,9 @@ def effective(f):
     if key not in scales:
         parent=by_id.get(f.get('parentID')); scales[key]=f.get('scale',1)*(effective(parent) if parent else 1)
     return scales[key]
-def arr(value): return [value[k] for k in sorted(value,key=lambda k:int(k))] if value else []
+def arr(value):
+    if isinstance(value,(list,tuple)): return list(value)
+    return [value[k] for k in sorted(value,key=lambda k:int(k))] if value else []
 def factors(anchor): return (0 if 'LEFT' in anchor else 1 if 'RIGHT' in anchor else .5,0 if 'TOP' in anchor else 1 if 'BOTTOM' in anchor else .5)
 def rect(f):
     key=f['exportID']
@@ -64,6 +67,135 @@ def color(c,default=(0,0,0)):
     return tuple(round(n*255) for n in v[:3]) if v else default
 def box(r):
     x,y,w,h=r; return (round(x*S),round(y*S),round((x+w)*S),round((y+h)*S))
+
+@lru_cache(maxsize=64)
+def native_surface(kind,width,height):
+    """Substitute a recognizable native skin, without bundling Blizzard art.
+
+    These deterministic gradients only make the offline frame geometry legible;
+    the game draws its real textures and atlases when the addon is loaded.
+    """
+    tile=Image.new('RGBA',(width,height),(0,0,0,0)); skin=ImageDraw.Draw(tile)
+    if kind=='parchment':
+        for yy in range(height):
+            t=yy/max(1,height-1)
+            shade=4*math.sin(t*math.pi)-7*t
+            skin.line((0,yy,width,yy),fill=(round(216+shade),round(189+shade),round(137+shade),255))
+        rng=random.Random(width*100003+height)
+        # Faint paper fibres and a worn rim, deliberately unlike an item icon.
+        for _ in range(max(40,width*height//2200)):
+            x,y=rng.randrange(width),rng.randrange(height)
+            skin.line((x,y,min(width,x+rng.randint(4,18)),y),fill=(121,86,45,12),width=1)
+        rim=max(2,round(4*S))
+        for inset in range(rim):
+            skin.rectangle((inset,inset,width-1-inset,height-1-inset),outline=(99,65,30,max(8,65-inset*8)))
+    elif kind=='list':
+        for yy in range(height):
+            shade=round(3*math.cos(yy/max(1,height)*math.pi))
+            skin.line((0,yy,width,yy),fill=(18+shade,23+shade,25+shade,255))
+        for yy in range(0,height,9*S):
+            skin.line((0,yy,width,yy),fill=(51,55,52,30),width=1)
+    elif kind=='header':
+        # A restrained stand-in for the native carved header art. The live
+        # client supplies its own texture; UI text remains a separate region.
+        rng=random.Random(width*47+height)
+        for yy in range(height):
+            t=yy/max(1,height-1)
+            shine=13*math.sin(math.pi*t)
+            skin.line((0,yy,width,yy),fill=(round(42+shine-13*t),round(28+shine*.65-9*t),round(18+shine*.3-5*t),255))
+        for _ in range(max(12,height//3)):
+            yy=rng.randrange(height); start=rng.randrange(max(1,width//4))
+            skin.line((start,yy,width-rng.randrange(max(1,width//4)),yy),fill=(117,81,36,rng.randrange(12,32)))
+        edge=max(1,round(1.2*S))
+        skin.line((0,1,width,1),fill=(164,128,65,235),width=edge)
+        skin.line((0,height-3,width,height-3),fill=(190,147,68,235),width=edge)
+        skin.line((0,height-1,width,height-1),fill=(5,7,9,255),width=edge)
+    elif kind=='highlight':
+        for xx in range(width):
+            strength=math.sin(math.pi*xx/max(1,width-1))**.5
+            skin.line((xx,0,xx,height),fill=(223,177,61,round(98*strength)))
+    elif kind=='scrollbar':
+        skin.rectangle((max(0,width//2-2*S),0,min(width-1,width//2+2*S),height),fill=(48,42,30,235))
+        skin.line((width//2,0,width//2,height),fill=(153,125,75,220),width=max(1,S))
+    elif kind=='emblem-ring':
+        inset=max(1,round(3*S)); thickness=max(1,round(2*S))
+        skin.ellipse((inset,inset,width-1-inset,height-1-inset),outline=(22,18,13,255),width=thickness*3)
+        skin.ellipse((inset+thickness,inset+thickness,width-1-inset-thickness,height-1-inset-thickness),outline=(182,146,78,255),width=thickness)
+        skin.arc((inset,inset,width-1-inset,height-1-inset),190,300,fill=(222,189,113,255),width=max(1,S))
+    return tile
+
+def texture_tile(f,width,height):
+    asset=str(f.get('texture') or f.get('atlas') or '').replace('\\','/')
+    name=asset.lower()
+    if f.get('styleRole')=='ornateHeader':
+        tile=native_surface('header',width,height).copy()
+    elif 'questbg' in name or 'questbackground' in name or 'quest-parchment' in name:
+        tile=native_surface('parchment',width,height).copy()
+    elif 'ui-questlogtitlehighlight' in name or 'questtitlehighlight' in name:
+        tile=native_surface('highlight',width,height).copy()
+    elif 'ui-dialogbox-header' in name or 'journal-header' in name:
+        tile=native_surface('header',width,height).copy()
+    elif 'ui-dialogbox-background' in name or 'questlog-background' in name:
+        tile=native_surface('list',width,height).copy()
+    elif 'ui-character-scrollbar' in name or 'ui-scrollbar' in name:
+        tile=native_surface('scrollbar',width,height).copy()
+    elif f.get('styleRole')=='ornateEmblemRing' or 'minimap-trackingborder' in name:
+        tile=native_surface('emblem-ring',width,height).copy()
+    else:
+        # The addon's own approved logo remains an actual asset in previews.
+        local=ROOT/asset.replace('Interface/AddOns/','')
+        path=next((p for p in [local,Path(str(local)+'.tga'),Path(str(local)+'.png')] if p.is_file()),None)
+        if path is None: return None
+        tile=Image.open(path).convert('RGBA').resize((width,height),Image.Resampling.LANCZOS)
+    tint=arr(f.get('vertexColor'))
+    alpha=float(f.get('alpha',1))
+    if tint:
+        multiplier=Image.new('RGB',tile.size,tuple(round(max(0,min(1,n))*255) for n in tint[:3]))
+        original_alpha=tile.getchannel('A')
+        tile=ImageChops.multiply(tile.convert('RGB'),multiplier).convert('RGBA')
+        tile.putalpha(original_alpha)
+        if len(tint)>3: alpha*=tint[3]
+    if alpha!=1:
+        alpha=max(0,min(1,alpha))
+        tile.putalpha(tile.getchannel('A').point(lambda n:round(n*alpha)))
+    return tile
+
+def paste_texture(tile,r,target):
+    position=(round(r[0]*S),round(r[1]*S))
+    if target.mode=='RGBA': target.alpha_composite(tile,position)
+    else: target.paste(tile,position,tile)
+
+def native_border(r,f):
+    """Approximate Blizzard's thick dialog edge instead of a flat rectangle."""
+    left,top,right,bottom=box(r)
+    edge_size=float(f.get('backdrop',{}).get('edgeSize',32))
+    unit=max(.5,effective(f))*S*edge_size/32
+    tint=arr(f.get('border')) or [1,1,1,1]
+    def tinted(rgb): return tuple(round(c*tint[i]) for i,c in enumerate(rgb))
+    # The alternating dark stone and brass bevel is what distinguishes this
+    # native edge from the earlier tooltip-sized hairline.
+    rings=[(0,(7,9,10),2),(2,(74,66,48),3),(5,(167,137,79),1),
+           (6,(105,90,62),3),(9,(35,32,27),2),(11,(196,160,88),1),
+           (12,(20,21,20),2)]
+    for inset,c,width in rings:
+        k=round(inset*unit); thick=max(1,round(width*unit))
+        if right-left>2*k and bottom-top>2*k:
+            draw.rectangle((left+k,top+k,right-k,bottom-k),outline=tinted(c),width=thick)
+    # Small corner studs follow the border geometry and do not create a new
+    # interaction or imply artwork was captured from the live client.
+    off=round(7.5*unit); radius=max(2,round(2.1*unit))
+    for cx,cy in [(left+off,top+off),(right-off,top+off),(left+off,bottom-off),(right-off,bottom-off)]:
+        draw.ellipse((cx-radius,cy-radius,cx+radius,cy+radius),fill=tinted((176,141,75)),outline=tinted((31,27,19)),width=max(1,round(unit)))
+
+def paint_order(f):
+    # A texture or font string is a region on its owner, rather than a frame
+    # with its own level. Respecting this is essential when shell art is
+    # created after the title: BACKGROUND must still stay behind OVERLAY text.
+    owner=by_id.get(f.get('parentID')) if f['kind'] in ('Texture','FontString') else f
+    level=(owner or f).get('level',0)
+    layers={'BACKGROUND':0,'BORDER':1,'ARTWORK':2,'OVERLAY':3,'HIGHLIGHT':4}
+    layer=1+layers.get(f.get('drawLayer','OVERLAY' if f['kind']=='FontString' else 'ARTWORK'),2) if f['kind'] in ('Texture','FontString') else 0
+    return (level,layer,f['exportID'])
 def text_lines(text,font,width):
     lines=[]
     for raw in text.split('\n'):
@@ -85,7 +217,7 @@ def scroll_clip(f):
     return result
 
 overflow=[]
-for f in frames:
+for f in sorted(frames,key=paint_order):
     if not f.get('visible') or f['kind'] in ('UIParent','Tooltip'): continue
     r=rect(f); x,y,w,h=r
     clip=scroll_clip(f); base_draw=draw; layer=None
@@ -94,7 +226,18 @@ for f in frames:
     if f.get('bg'):
         backdrop=f.get('backdrop',{}); native='UI-DialogBox' in backdrop.get('bgFile','') or 'UI-Tooltip' in backdrop.get('bgFile','')
         tint=color(f['bg']); fill=tuple(round(c*.23) for c in tint) if native else tint
-        draw.rectangle(box(r),fill=fill,outline=color(f.get('border'),(80,68,47)),width=max(1,round((4 if 'UI-DialogBox' in backdrop.get('edgeFile','') else 1)*S*effective(f))))
+        rgba=arr(f['bg']); alpha=max(0,min(1,float(rgba[3] if len(rgba)>3 else 1)))
+        if alpha>=1:
+            draw.rectangle(box(r),fill=fill)
+        elif alpha>0:
+            # Pane surfaces may be border-only above one shared panorama.
+            # Composite the actual background alpha on either the main RGB
+            # canvas or a scroll-clipped RGBA layer instead of painting it solid.
+            tile=Image.new('RGBA',(max(1,round(w*S)),max(1,round(h*S))),fill+(round(alpha*255),))
+            paste_texture(tile,r,layer if layer is not None else image)
+        draw.rectangle(box(r),outline=color(f.get('border'),(80,68,47)),width=max(1,round((4 if 'UI-DialogBox' in backdrop.get('edgeFile','') else 1)*S*effective(f))))
+        if 'UI-DialogBox-Border' in backdrop.get('edgeFile',''):
+            native_border(r,f)
     if 'UIPanelButtonTemplate' in f.get('template',''):
         left,top,right,bottom=box(r)
         for yy in range(top,bottom+1):
@@ -111,21 +254,24 @@ for f in frames:
         fraction=(f.get('value',95)-f.get('minValue',0))/max(1,f.get('maxValue',100)-f.get('minValue',0)); cx=x+fraction*w
         draw.rectangle(box((cx-5,y,10,h)),fill=(214,182,118),outline=(83,60,25),width=S)
     if f['kind']=='Texture':
-        if f.get('texture'):
-            asset=f['texture'].replace('\\','/').replace('Interface/AddOns/','')
-            path=ROOT/(asset+'.tga')
-            if path.is_file():
-                tile=Image.open(path).convert('RGBA').resize((max(1,round(w*S)),max(1,round(h*S))),Image.Resampling.LANCZOS)
-                target=layer if layer is not None else image; target.paste(tile,(round(x*S),round(y*S)),tile)
+        if f.get('texture') or f.get('atlas'):
+            tile=texture_tile(f,max(1,round(w*S)),max(1,round(h*S)))
+            if tile is not None:
+                paste_texture(tile,r,layer if layer is not None else image)
             else:
                 draw.rectangle(box(r),fill=(36,49,69),outline=(99,115,139),width=S)
                 cx,cy=(x+w/2)*S,(y+h/2)*S; radius=min(12,w*.3,h*.3)*S
                 draw.polygon([(cx,cy-radius),(cx+radius,cy),(cx,cy+radius),(cx-radius,cy)],fill=(219,182,109))
         elif f.get('color'):
             rgba=arr(f['color']); alpha=rgba[3] if len(rgba)>3 else 1
+            alpha*=max(0,min(1,float(f.get('alpha',1))))
             tile=Image.new('RGBA',(max(1,round(w*S)),max(1,round(h*S))),color(f['color'])+(round(alpha*255),))
-            if layer is not None: layer.alpha_composite(tile,(round(x*S),round(y*S)))
-            else: image.paste(tile,(round(x*S),round(y*S)),tile)
+            paste_texture(tile,r,layer if layer is not None else image)
+        owner=by_id.get(f.get('parentID'))
+        if owner and 'UI-DialogBox-Border' in owner.get('backdrop',{}).get('edgeFile',''):
+            # Backdrop borders are above their owner's background textures.
+            # Keep the visible rim when a landscape/veil fills the panel.
+            native_border(rect(owner),owner)
     if f['kind']=='CheckButton':
         draw.rectangle(box(r),fill=(16,23,34),outline=(57,69,87),width=S)
         if f.get('checked'):

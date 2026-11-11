@@ -1,0 +1,36 @@
+UPGRADE CROSSROADS 0.6.0 - QUEST JOURNAL UPDATE
+
+This source update is based on public main commit
+9ab7b4c290f61f0d19d83ffffedd85471463cc4d (v0.5.3).
+
+INSTALL FOR A LIVE TEST
+1. Close WoW.
+2. Extract UpgradeCrossroads-v0.6.0-forever.zip.
+3. Copy UpgradeCrossroads into the same Interface/AddOns folder as before,
+   replacing files. Keep WTF/SavedVariables and your saved hunts.
+4. Launch WoW, type /uc, and check /uc status says v0.6.0.
+5. Journal should open with equipment groups and parchment details.
+
+WHAT TO TRY
+- Select an item, then Track, map, alternate Source and Chat.
+- Shift/right-click should draft an item link; Ctrl-click should preview it.
+- Remove an item, open Removed, then Restore it. Notes/checklists stay saved.
+- Actually obtaining an item should put it in Completed; merely tracking it
+  should not. Completed reflects items observed since use of this version.
+- Search across slots, collapse a slot, change picks per slot and open Filters.
+- Test Alliance/Horde/Both and your own class's specialization choices.
+- Shrink the window and use Largest text. The footer can use two action rows;
+  item details scroll independently. Drag to scale; Shift-drag to resize.
+- Compare retains the old slot/path screen. Other pages remain in the same shell.
+
+SOURCE UPDATE
+Extract the source-update ZIP into C:\Dev\UpgradeCrossroads, replacing its files.
+It contains source/tests/docs, not an extra copy of the Git repository.
+Run your usual tests, review layouts, commit and push. No tag or CurseForge
+upload has been created for this build. Verify the in-game appearance first.
+
+DATA AND LIMITS
+Existing hunts, notes, custom weights, sources and appearance are preserved.
+Catalog data remains the October 13, 2026 snapshot. Rankings use the existing
+editable weighted-stat model; they are not GearQuest rankings or verified BiS.
+The simulator, enchant suggestions and gamepad controls are separate work.

@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.5.3
+UPGRADE CROSSROADS 0.6.5
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -17,12 +17,23 @@ FIRST USE
 The approved emblem beside your minimap opens the planner. Right-click for Hunts;
 drag it to reposition. /uc minimap reset restores the shortcut if it goes missing.
 
-Your character class is detected automatically. Choose a spec and equipment slot.
-Quest & craft, Dungeons and Future gear are
-tabs in a native-style gear journal. The item list selects what to inspect;
-the large item name/icon or Track starts its guide directly. Chat or Shift-/
-right-click inserts an unsent link; Ctrl-click previews gear. Switch sources
-beside the selected item. Search filters names, sources or zones for this slot.
+The Journal opens first. It groups ranked suggestions under expandable equipment
+headings, with a parchment description and reward on the right. Choose your spec,
+then select any item. Track, Show on map, Remove and Chat are on that same item.
+Click the reward itself to start its guide. Shift-/right-click drafts an item
+link; Ctrl-click previews it. Nothing sends a chat message automatically.
+
+Active shows eligible suggestions. Completed records items actually observed in
+your bags/equipment or acquired saved hunts; it is not a full historic collection.
+Removed hides an item until you restore it, preserving its hunt notes/checklists.
+Use Filters for source paths, Solo, Crafts, AH and Alliance/Horde/Both. Available
+now uses your current level; Future goals includes later levels. The left search
+matches item, boss, quest and zone names across every slot. Choose 1/3/5/10 picks
+per slot; these ranks use model weights, not verified BiS or a simulation.
+
+Compare retains the detailed single-slot Quest & craft, Dungeons and Future gear
+views. Hunts retains your saved preparation checklists and notes. All pages share
+the same window; appearance, minimap, scaling and source correction still work.
 
 CLASS AND SPEC
 The spec button offers only the detected character class's choices: 29 choices
@@ -54,14 +65,24 @@ are labeled unavailable to this character. Saved hunts and notes are retained;
 source cycling only offers sources included by the selected faction view.
 
 ONE WINDOW, CLEANER TEXT
-Gear, Hunts, Settings, Help and Add item are pages of one main window. One page
+Journal, Compare, Hunts, Settings, Help and Add item share one main window. One page
 is shown at a time. They share size, scale, position and a native close button;
 the tracker alone stays separate. Closing the shell hides every page.
 
 Settings or /uc appearance opens saved presets, panel opacity, custom colors,
-font choice, text size, optional outlines and a window-scale slider. Defaults
-use a solid dark surface, plain readable body text without heavy outlines,
-quieter item/slot rows, native action buttons and a round minimap emblem.
+font choice, text size, optional outlines and a window-scale slider. WoW's
+standard font is the default throughout the addon, including body text, item
+rows, controls and the tracker. Plain readable text remains an optional font.
+Older font settings switch once to the WoW default on upgrade; choose Plain
+again in Settings if preferred. New explicit choices survive future reloads.
+
+The default appearance uses one continuous panorama across the list and detail
+pane, an umber/brass title bar, heavier native frame borders, native action
+buttons and a round minimap emblem. The scene flows across the middle, fading from
+deep cool terrain on the left into richer warm-tan aged parchment and faint
+sepia terrain on the right. Dark ink remains readable over the detail area;
+the artwork stays behind every control and follows the shared window when it
+is resized.
 
 The circular icon has transparent corners. There is no square minimap backdrop.
 Restart the client after installing its new texture filenames.

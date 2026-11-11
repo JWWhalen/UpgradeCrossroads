@@ -1,0 +1,30 @@
+UPGRADE CROSSROADS 0.6.5 - WOW DEFAULT FONT
+
+WoW's standard font is now the default across the addon. The client supplies the
+native font; no font file is bundled. Plain readable text remains a choice in
+Settings. The darker scenery, aged parchment and continuous panorama are retained.
+
+GAME INSTALL
+Close WoW, extract UpgradeCrossroads-v0.6.5-forever.zip and replace the existing
+UpgradeCrossroads folder in Interface/AddOns. Keep your WTF/SavedVariables.
+Restart the client. /uc status should say v0.6.5.
+
+On the first upgrade from older releases, font settings switch once to the WoW
+default. Choose Plain again in Settings if preferred. New explicit choices save
+across reloads. Hunts, notes and other appearance settings are retained.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.6.5-source-update.zip into C:\Dev\UpgradeCrossroads,
+replacing its files. It contains the complete changes from public v0.5.3 through
+v0.6.5, including the journal code, panorama and TOC. It can be applied over the
+earlier 0.6.x source updates. The install ZIP belongs in the game; the source
+update belongs in your project.
+
+If you previously copied the 0.6.1/0.6.2 files, remove the two obsolete files
+UpgradeCrossroads/Media/JournalLandscape.tga and
+UpgradeCrossroads/Media/JournalParchment.tga from your project and game addon
+folder. They are no longer used. Keep the original PNG masters under art/.
+
+Offline previews use substitute fonts and are not live WoW captures. The catalog
+remains the October 13 snapshot. No release tag or CurseForge upload has been
+created by this update.

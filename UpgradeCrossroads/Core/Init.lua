@@ -2,15 +2,19 @@ local _, XC = ...
 local function defaults()
     local db=type(UpgradeCrossroadsDB)=="table" and UpgradeCrossroadsDB or {}
     UpgradeCrossroadsDB=db; XC.db=db
+    db.appearance=type(db.appearance)=="table" and db.appearance or {}
     if (db.schema or 0)<5 then
-        db.appearance=type(db.appearance)=="table" and db.appearance or {}
-        db.appearance.font="plain"; db.appearance.outline=false
+        db.appearance.outline=false
         if not db.appearance.opacity or db.appearance.opacity>=.95 then db.appearance.opacity=1 end
     end
-    db.schema=5
+    -- Older versions saved the automatic plain default as a normal selection.
+    -- Switch it once; choices made with the new font control remain explicit.
+    if (db.schema or 0)<6 and db.appearance.fontChosen~=true then db.appearance.font="classic" end
+    db.schema=6
     if type(db.windows)~="table" then db.windows={} end
     if type(db.locations)~="table" then db.locations={} end
     if type(db.pins)~="table" then db.pins={} end
+    if XC.JournalState then XC:JournalState(); XC:InvalidateJournal() end
     if type(db.custom)~="table" then db.custom={} end
     if type(db.weights)~="table" then db.weights={} end
     if type(db.minimap)~="table" then db.minimap={angle=225,hidden=false} end

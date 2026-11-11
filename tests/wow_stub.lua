@@ -29,7 +29,7 @@ function methods:SetPoint(...)
     self.points=self.points or {}; self.points[self.point[1]]=self.point
 end
 function methods:GetPoint() return unpack(self.point or {}) end
-function methods:ClearAllPoints() self.point=nil; self.points={} end
+function methods:ClearAllPoints() self.point=nil; self.points={}; self.allPoints=nil end
 function methods:SetAllPoints(other) self.allPoints=other or self.parent end
 function methods:SetBackdrop(v) self.backdrop=v end
 function methods:SetBackdropColor(...) self.bg={...} end
@@ -44,6 +44,11 @@ function methods:SetJustifyV(v) self.justifyV=v end
 function methods:SetWordWrap(v) self.wrap=v end
 function methods:SetColorTexture(...) self.color={...} end
 function methods:SetTexture(v) self.texture=v end
+function methods:SetAlpha(v) self.alpha=v end
+function methods:GetAlpha() return self.alpha or 1 end
+function methods:SetVertexColor(...) self.vertexColor={...} end
+function methods:SetDrawLayer(layer,sublevel) self.drawLayer=layer; self.drawSublevel=sublevel end
+function methods:SetBlendMode(mode) self.blendMode=mode end
 function methods:SetHighlightTexture(v) self.highlight=v end
 function methods:SetNormalTexture(v) self.normalTexture=v end
 function methods:GetFontString()
@@ -111,13 +116,15 @@ function methods:HasFocus() return self.focus end
 function methods:RegisterEvent(v) self.events=self.events or {}; self.events[v]=true end
 function methods:UnregisterAllEvents() self.events={} end
 function methods:SetScrollChild(v) self.scrollChild=v end
+function methods:SetVerticalScroll(v) self.verticalScroll=v end
+function methods:GetVerticalScroll() return self.verticalScroll or 0 end
 function methods:SetMinMaxValues(low,high) self.minValue=low; self.maxValue=high end
 function methods:SetValueStep(step) self.valueStep=step end
 function methods:SetObeyStepOnDrag(v) self.obeyStep=v end
 function methods:SetValue(value) self.value=value; if self.scripts.OnValueChanged then self.scripts.OnValueChanged(self,value) end end
 function methods:GetValue() return self.value end
-function methods:CreateFontString(name,layer,template) return make("FontString",name,self) end
-function methods:CreateTexture(name,layer,template) return make("Texture",name,self) end
+function methods:CreateFontString(name,layer,template) local f=make("FontString",name,self); f.drawLayer=layer; return f end
+function methods:CreateTexture(name,layer,template) local f=make("Texture",name,self); f.drawLayer=layer; return f end
 function methods:SetOwner(...) end
 function methods:SetHyperlink(...) end
 function methods:AddLine(...) end

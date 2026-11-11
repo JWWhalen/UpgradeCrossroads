@@ -49,14 +49,17 @@ def test(name, code):
 test('initialization and slash commands', '''
 FireEvent("ADDON_LOADED","UpgradeCrossroads")
 assert(XC.db.profile=="warrior_arms" and XC.db.slot==16)
+assert(XC.db.schema==6 and XC:Appearance().font=="classic")
 assert(type(SlashCmdList.UPGRADECROSSROADS)=="function")
 assert(XC.CatalogMeta.count==3529)
 ''')
 test('complete native UI opens with catalog recommendations', '''
 SlashCmdList.UPGRADECROSSROADS("")
 assert(XC.window:IsShown())
+assert(XC.window.activePage=="gear" and XC.window.journal:IsShown() and not XC.window.pages.compare:IsShown())
 assert(#XC.lanes.reliable>0 and #XC.lanes.dungeon>0 and #XC.lanes.longterm>0)
 assert(XC.window.lanes.reliable.name.text~="")
+for _,record in ipairs(XC.W.fonts) do assert(record.object.fontPath=="Fonts\\\\FRIZQT__.TTF") end
 ''')
 test('close button is outside the title drag region and closes without Escape', '''
 local f=XC.window; local drag=f.dragHandle; local close=f.closeButton
@@ -532,29 +535,38 @@ for _,record in ipairs(XC.W.fonts) do
  if parent==f then
   local pixels=record.object.fontSize*record.parent:GetEffectiveScale()
   assert(pixels>=12-.0001 and math.abs(pixels-math.floor(pixels+.5))<.0001)
-  assert(record.object.fontFlags=="" and record.object.shadowOffset[1]==1)
+  assert(record.object.fontFlags=="")
+  assert(record.object.shadowOffset[1]==(record.paper and 0 or 1))
  end
 end
 UIParent:SetScale(old); XC:ApplyAppearance()
 """)
 test('appearance can change fonts sizes outlines and restore without clearing hunts', """
 local f=XC.appearanceWindow; local pins=XC.db.pins
-f.font.scripts.OnClick(); assert(XC.db.appearance.font=="classic"); f.font.scripts.OnClick()
+assert(XC:Appearance().font=="classic" and XC.window.profile.label.fontPath:find("FRIZQT"))
+local standard=STANDARD_TEXT_FONT
+STANDARD_TEXT_FONT="Fonts\\\\CLIENT_STANDARD.TTF"; XC:ApplyAppearance()
+assert(XC.window.profile.label.fontPath==STANDARD_TEXT_FONT and XC.window.journal.description.fontPath==STANDARD_TEXT_FONT)
+STANDARD_TEXT_FONT=standard; XC:ApplyAppearance()
+f.font.scripts.OnClick(); assert(XC.db.appearance.font=="plain" and XC.db.appearance.fontChosen)
+FireEvent("ADDON_LOADED","UpgradeCrossroads")
+assert(XC:Appearance().font=="plain" and XC.window.profile.label.fontPath:find("ARIALN"))
 f.textSize.scripts.OnClick(); assert(XC.db.appearance.textBoost==1)
 f.outline:SetChecked(false); f.outline.scripts.OnClick(f.outline)
 assert(XC.window.profile.label.fontPath:find("ARIALN") and XC.window.profile.label.fontFlags=="")
-f.reset.scripts.OnClick(); assert(XC:Appearance().theme=="classic" and not XC:Appearance().outline and XC.db.pins==pins)
+f.font.scripts.OnClick(); assert(XC:Appearance().font=="classic" and XC.window.profile.label.fontPath:find("FRIZQT"))
+f.reset.scripts.OnClick(); assert(XC:Appearance().theme=="classic" and XC:Appearance().font=="classic" and not XC:Appearance().outline and XC.db.pins==pins)
 f:Hide()
 """)
 test('path tabs and item list inspect sources before one-click tracking', """
-XC:ShowPage("gear"); XC.db.slot=16; XC.search=""; XC:Refresh(); XC:SelectPath("dungeon")
+XC:ShowPage("compare"); XC.db.slot=16; XC.search=""; XC:Refresh(); XC:SelectPath("dungeon")
 assert(XC.window.lanes.dungeon:IsShown() and not XC.window.lanes.reliable:IsShown())
 local c=XC.window.lanes.dungeon; local before=XC.db.activeHunt
 assert(c.items[2]:IsShown()); c.items[2].scripts.OnClick(c.items[2],"LeftButton")
 assert(XC.selection.dungeon==2 and XC.db.activeHunt==before)
 assert(c.name.text==XC:DisplayRow("dungeon").item.name)
 c.itemButton.scripts.OnClick(c.itemButton,"LeftButton"); assert(XC.db.activeHunt and XC.guide:IsShown())
-XC:ShowPage("gear"); XC.window.tabs.reliable.scripts.OnClick(); assert(XC.window.lanes.reliable:IsShown())
+XC:ShowPage("compare"); XC.window.tabs.reliable.scripts.OnClick(); assert(XC.window.lanes.reliable:IsShown())
 """)
 test('native framing and approved logo paths are used consistently', """
 assert(XC.window.backdrop.bgFile:find("WHITE8X8",1,true) and XC.window.bg[4]==1)
@@ -564,10 +576,10 @@ assert(XC.window.headerIcon.texture:match("UpgradeCrossroads.+Media.+LogoRound$"
 """)
 test('page navigation is exclusive and never creates floating settings windows', """
 XC:ShowTargetEditor(); XC:ShowAppearance(); local root=XC.window
-for _,id in ipairs({"gear","hunts","appearance","help","editor"}) do XC:ShowPage(id) end
+for _,id in ipairs({"gear","compare","hunts","appearance","help","editor"}) do XC:ShowPage(id) end
 local count=#Frames
 for pass=1,4 do
- for _,id in ipairs({"gear","hunts","appearance","help","editor"}) do
+ for _,id in ipairs({"gear","compare","hunts","appearance","help","editor"}) do
   XC:ShowPage(id); local shown=0
   for key,page in pairs(root.pages) do
    assert(page:GetParent()==root.pageHost and not page.resizable and not page.closeButton)
@@ -609,9 +621,16 @@ local db=XC.db; local pins=db.pins
 local prior=db.appearance; db.schema=4
  db.appearance={theme="classic",background="112233",opacity=.65,font="classic",outline=true}
 FireEvent("ADDON_LOADED","UpgradeCrossroads")
-assert(db.schema==5 and db.pins==pins)
+assert(db.schema==6 and db.pins==pins)
 assert(db.appearance.background=="112233" and db.appearance.opacity==.65)
-assert(db.appearance.font=="plain" and not db.appearance.outline)
+assert(db.appearance.font=="classic" and not db.appearance.outline)
+db.schema=5; db.appearance.font="plain"
+FireEvent("ADDON_LOADED","UpgradeCrossroads")
+assert(db.schema==6 and db.appearance.font=="classic" and db.pins==pins)
+assert(db.appearance.background=="112233" and db.appearance.opacity==.65)
+db.schema=5; db.appearance.font="plain"; db.appearance.fontChosen=true
+FireEvent("ADDON_LOADED","UpgradeCrossroads")
+assert(db.schema==6 and db.appearance.font=="plain" and db.pins==pins)
 db.appearance=prior; XC:ApplyAppearance()
 """)
 test('large text with global UI scaling keeps form and tracker controls apart', """
@@ -818,6 +837,207 @@ XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
 MockClass=class; MockClassID=id; XC.db.profile=profile; XC:Refresh()
 """)
 
+test('journal model ranks every slot and preserves removal and ownership history', (ROOT/'tests/journal_model_tests.lua').read_text())
+
+test('quest journal opens grouped slots and selects inline without creating a hunt', '''
+JournalUITest={db=XC.db,savedVars=UpgradeCrossroadsDB,catalog=XC.Client.Catalog,class=MockClass,classID=MockClassID,level=MockLevel,
+    owned=Owned,inventory=FakeInventory,completed=Completed,sourceSelection=XC.sourceSelection,
+    journalSourceSelection=XC.journalSourceSelection,profile=XC.db.profile}
+MockClass="WARRIOR"; MockClassID=1; MockLevel=21; Owned={}; FakeInventory={}; Completed={}
+local db={}; for k,v in pairs(XC.db) do db[k]=v end
+db.profile="warrior_arms"; db.slot=16; db.pins={}; db.pinOrder=0; db.custom={}; db.journal={}; db.journalUI={}
+db.weights={}; for id,weights in pairs(XC.db.weights) do db.weights[id]=weights end
+db.options={faction="alliance",solo=false,crafted=true,auction=false}; db.activeHunt=nil
+XC.db=db; UpgradeCrossroadsDB=db; XC.sourceSelection={}; XC.journalSourceSelection={}
+JournalUICatalog={
+ [991101]={id=991101,name="Journal Crown",quality=3,inv=1,classID=4,subclassID=1,req=1,stats={str=60},basis="forever",sources={
+  {kind="vendor",name="Journal Vendor",zone="Westfall",mapID=1436,x=12,y=34,side=1},
+  {kind="dungeon",name="Journal Boss",zone="Journal Dungeon",mapID=1436,x=21,y=43,side=1}}},
+ [991102]={id=991102,name="Journal Crafted Crown",quality=2,inv=1,classID=4,subclassID=1,req=1,stats={str=40},basis="forever",sources={
+  {kind="craft",name="Journal Crown Recipe",skill=100}}},
+ [991103]={id=991103,name="Journal Pendant",quality=3,inv=2,classID=4,subclassID=1,req=1,stats={str=10},basis="forever",sources={
+  {kind="vendor",name="Pendant Vendor",zone="Westfall",mapID=1436,x=15,y=35,side=1}}},
+ [991104]={id=991104,name="Future Journal Shoulders",quality=3,inv=3,classID=4,subclassID=1,req=40,stats={str=70},basis="forever",sources={
+  {kind="vendor",name="Future Vendor",minLevel=40}}},
+}
+for id,item in pairs(JournalUICatalog) do ItemInfo[id]={name=item.name,quality=item.quality,ilvl=20,req=item.req,equip="INVTYPE_HEAD",classID=4,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=item.stats.str}} end
+XC.Client.Catalog=function() return JournalUICatalog end
+XC.window.journal.query=""; XC.window.journal.search.edit:SetText("")
+XC:ShowPage("gear"); XC:Refresh()
+local p=XC.window.journal; assert(p and p:IsShown() and not XC.window.pages.compare:IsShown())
+assert(p.left.surfaceKind=="list" and p.paper.surfaceKind=="parchment")
+assert(#p.entries==3 and p.entries[1].slotID==1 and p.entries[3].slotID==2)
+assert(p.rows[1].label.text:find("Head",1,true) and p.rows[4].label.text:find("Neck",1,true))
+local before=#Frames; p.rows[5].scripts.OnClick(p.rows[5],"LeftButton")
+assert(p.selectedRow.item.id==991103 and p.title.text=="Journal Pendant")
+assert(XC.db.activeHunt==nil and not next(XC.db.pins) and #Frames==before)
+assert(p.track:GetParent()==p.paper and p.map:GetParent()==p.paper)
+''')
+test('journal item actions cycle sources map directly and draft unsent chat', '''
+local p=XC.window.journal
+p.rows[2].scripts.OnClick(p.rows[2],"LeftButton")
+assert(p.selectedRow.item.id==991101 and p.selectedRow.sourceCount==2)
+assert(XC:SetJournalSource(p.selectedRow,1)); XC:RenderJournal()
+assert(p.selectedRow.source.kind=="vendor")
+local key=p.selectedRow.key; p.sourceChoice.scripts.OnClick()
+assert(p.selectedRow.key==key and p.selectedRow.source.kind=="dungeon")
+p.sourceChoice.scripts.OnClick(); assert(p.selectedRow.source.kind=="vendor")
+LastWaypoint=nil; MapOpened=nil; p.map.scripts.OnClick()
+assert(LastWaypoint and LastWaypoint.id==1436 and LastWaypoint.x==.12 and MapOpened==1436)
+assert(not next(XC.db.pins), "show on map must not silently create a hunt")
+ChatActive=false; ChatDraft=""; local sent=ChatSent
+p.chat.scripts.OnClick(); assert(ChatDraft=="item:991101" and ChatSent==sent)
+ChatDraft="existing "; ChatActive=true; p.rewardButton.scripts.OnClick(p.rewardButton,"RightButton")
+assert(ChatDraft=="existing item:991101" and ChatSent==sent)
+MockControl=true; p.rewardButton.scripts.OnClick(p.rewardButton,"LeftButton"); MockControl=false
+assert(PreviewedLink=="item:991101" and not next(XC.db.pins))
+''')
+test('journal track and reward click share a persistent hunt and ownership moves it to completed', '''
+local p=XC.window.journal; p.track.scripts.OnClick()
+local pin=XC.db.pins["991101"]; assert(pin and XC.db.activeHunt=="991101" and XC.guide:IsShown())
+pin.notes="journal notes"; pin.checks[1]=true
+XC:ShowPage("gear"); p.rewardButton.scripts.OnClick(p.rewardButton,"LeftButton")
+assert(XC.db.pins["991101"]==pin and pin.notes=="journal notes" and pin.checks[1])
+XC:ShowPage("gear"); p.tabs.completed.scripts.OnClick()
+assert(#p.entries==0 and p.empty:IsShown(), "tracking alone is not completion")
+Owned[991101]=1; FireEvent("BAG_UPDATE_DELAYED"); FlushTimers()
+assert(pin.acquired)
+p.tabs.completed.scripts.OnClick(); assert(#p.entries==1 and p.selectedRow.item.id==991101)
+assert(p.rewardMeta.text=="Obtained" and p.track.enabled)
+Owned[991101]=nil; XC:Refresh(); assert(#p.entries==1, "observed completion survives a sale")
+''')
+test('journal remove and restore retain hunt notes across saved-state initialization', '''
+local p=XC.window.journal; local pin=XC.db.pins["991101"]
+p.remove.scripts.OnClick(); assert(XC.db.journal.removed["991101"] and #p.entries==0)
+p.tabs.removed.scripts.OnClick()
+assert(#p.entries==1 and p.remove.label.text=="Restore" and not XC.db.activeHunt)
+FireEvent("ADDON_LOADED","UpgradeCrossroads"); XC:Refresh()
+assert(#p.entries==1 and p.selectedRow.obtained)
+p.remove.scripts.OnClick(); assert(not XC.db.journal.removed["991101"] and #p.entries==0)
+p.tabs.completed.scripts.OnClick(); assert(#p.entries==1)
+assert(XC.db.pins["991101"]==pin and pin.notes=="journal notes" and pin.checks[1])
+''')
+test('journal search filters alternate sources and collapsing does not change selection', '''
+local p=XC.window.journal; p.tabs.active.scripts.OnClick()
+-- Restore the crown to active only for this independent UI scenario.
+XC.db.journal.obtained["991101"]=nil; XC.db.pins["991101"].acquired=nil; XC:Refresh()
+p.search.edit:SetText("journal boss"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(#p.entries==1 and p.selectedRow.item.id==991101)
+p.clear.scripts.OnClick(); assert(#p.entries==3 and p.query=="")
+local selected=XC.db.journalUI.selected
+p.rows[1].scripts.OnClick(); assert(XC.db.journalUI.collapsed[1] and XC.db.journalUI.selected==selected)
+assert(p.rows[2].label.text:find("Neck",1,true))
+p.expand.scripts.OnClick(); assert(not next(XC.db.journalUI.collapsed))
+local limit=XC.db.journalUI.limit; p.limit.scripts.OnClick(); assert(XC.db.journalUI.limit~=limit)
+p.filterButton.scripts.OnClick(); assert(p.filters:IsShown())
+p.solo:SetChecked(true); p.solo.scripts.OnClick(p.solo)
+for _,row in ipairs(p.entries) do for _,source in ipairs(row.sources) do assert(source.kind~="dungeon") end end
+p.craft:SetChecked(false); p.craft.scripts.OnClick(p.craft)
+for _,row in ipairs(p.entries) do assert(row.source.kind~="craft") end
+p.faction.scripts.OnClick(); assert(XC.db.options.faction=="horde")
+p.faction.scripts.OnClick(); assert(XC.db.options.faction=="both")
+p.faction.scripts.OnClick(); assert(XC.db.options.faction=="alliance")
+for i=1,3 do p.lane.scripts.OnClick() end
+assert(XC.db.journalUI.lane=="longterm")
+p.search.edit:SetText("Future Journal"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(#p.entries==1 and p.selectedRow.item.id==991104 and p.selectedRow.locked)
+assert(p.rewardMeta.text=="Requires level 40")
+p.clear.scripts.OnClick(); p.lane.scripts.OnClick()
+assert(XC.db.journalUI.lane=="all")
+for _,row in ipairs(p.entries) do assert(row.item.id~=991104) end
+''')
+test('journal weights tooltip and comparison identify custom per-spec estimates', '''
+local p=XC.window.journal; local profile=XC.db.profile; local prior=XC.db.weights[profile]
+XC.db.weights[profile]=nil; XC:Refresh()
+assert(p.basis.text:find("Starter role weights",1,true))
+SlashCmdList.UPGRADECROSSROADS("weights str=3")
+assert(p.basis.text:find("Custom stat weights",1,true))
+p.profile.scripts.OnEnter(p.profile)
+assert(GameTooltip.text:find("str=3",1,true) and GameTooltip.text:find("Custom stat weights",1,true))
+p.profile.scripts.OnLeave(p.profile); assert(not GameTooltip:IsShown())
+p.profile.scripts.OnClick(); assert(XC.db.profile~=profile)
+assert(XC:GetProfile(XC.db.profile).weights.str~=3)
+XC:SetProfile(profile); assert(XC:GetProfile(profile).weights.str==3 and p.basis.text:find("Custom stat weights",1,true))
+XC.db.weights[profile]=prior; XC:Refresh()
+''')
+test('journal parchment scroll and fixed actions stay separate at minimum size and largest text', '''
+local p=XC.window.journal; XC.window:SetSize(900,720)
+XC:Appearance().textBoost=2; XC:ApplyAppearance(); XC.W.SetWindowScale(XC.window,.8)
+local previous=UIParent:GetScale(); UIParent:SetScale(.64); XC.W.SetWindowScale(XC.window,.8)
+p:ApplyLayout()
+local root=XC.window
+assert(not root.description:IsShown(), "journal uses its own introduction")
+local navTop=-root.nav.gear.point[3]
+assert(navTop>=-root.title.point[3]+root.title:GetStringHeight()+4, "navigation must clear the shell title")
+local profileBottom=-p.profile.point[3]+p.profile.height
+local introTop=-p.intro.point[3]; local introBottom=introTop+p.intro:GetStringHeight()
+assert(introTop>=profileBottom+8 and introTop>=-p.heading.point[3]+p.heading:GetStringHeight()+4)
+assert(-p.left.point[3]>=introBottom+8 and -p.paper.point[3]>=introBottom+8)
+if p.filters:IsShown() then
+ assert(-p.filters.point[3]>=introBottom+8)
+ assert(-p.left.point[3]>=-p.filters.point[3]+p.filters.height+8)
+end
+assert(p.left:GetWidth()>=350 and p.paper:GetWidth()>400 and not p.left.allPoints and not p.paper.allPoints)
+assert(p.left.point[2]+p.left.width<p.paper.point[2])
+local tabRight=0
+for _,id in ipairs({"active","completed","removed"}) do
+ local b=p.tabs[id]
+ assert(b.label:GetStringWidth()+16<=b.width+.01, id.." tab label must fit")
+ assert(b.point[2]>=tabRight and b.point[2]+b.width<=p.left.width-4)
+ tabRight=b.point[2]+b.width
+ assert(-p.search.point[3]>=-b.point[3]+b.height+8)
+end
+assert(p.clear.point[2]>=p.search.point[2]+p.search.width+8)
+assert(p.clear.point[2]+p.clear.width<=p.left.width-8)
+assert(p.clear.label:GetStringWidth()+20<=p.clear.width+.01)
+assert(-p.scroll.points.TOPLEFT[3]>=-p.search.point[3]+p.search.height+10)
+local boxes={}; local scrollBottom=p.detailScroll.points.BOTTOMRIGHT[3]
+for _,b in ipairs({p.track,p.map,p.remove,p.chat}) do
+ assert(b.point[2]>=10 and b.point[2]+b.width<=p.paper.width-8)
+ assert(b.label:GetStringWidth()+20<=b.width+.01)
+ assert(b:GetParent()==p.paper and -b.point[3]>p.paper.height-scrollBottom)
+ local current={x=b.point[2],y=-b.point[3],w=b.width,h=b.height}
+ for _,other in ipairs(boxes) do
+  assert(current.x+current.w<=other.x or other.x+other.w<=current.x
+   or current.y+current.h<=other.y or other.y+other.h<=current.y)
+ end
+ boxes[#boxes+1]=current
+end
+assert(p.sourceChoice.label:GetStringWidth()+20<=p.sourceChoice.width+.01)
+for _,b in ipairs({p.limit,p.expand}) do
+ assert(b.point[2]>=8 and b.point[2]+b.width<=p.left.width-8)
+ assert(b.label:GetStringWidth()+20<=b.width+.01)
+end
+p.detailScroll:SetVerticalScroll(170); p.scroll:SetVerticalScroll(90)
+assert(p.detailScroll:GetVerticalScroll()==170 and p.scroll:GetVerticalScroll()==90)
+for _,record in ipairs(XC.W.fonts) do
+ if record.paper then
+  assert(record.object.color[1]<.5 and record.object.color[2]<.5 and record.object.shadowOffset[1]==0 and record.object.fontFlags=="")
+ end
+end
+for _,id in ipairs({"compare","hunts","appearance","help"}) do
+ XC:ShowPage(id)
+ assert(root.description:IsShown())
+ local descriptionBottom=-root.description.point[3]+root.description:GetStringHeight()
+ for _,b in pairs(root.nav) do assert(-b.point[3]>=descriptionBottom+8) end
+ local navBottom=0
+ for _,b in pairs(root.nav) do navBottom=math.max(navBottom,-b.point[3]+b.height) end
+ assert(-root.pageHost.point[3]>=navBottom+8)
+end
+XC:ShowPage("gear")
+UIParent:SetScale(previous); XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
+''')
+test('journal UI scenarios restore the original character and catalog', '''
+local saved=JournalUITest
+XC.db=saved.db; UpgradeCrossroadsDB=saved.savedVars; XC.Client.Catalog=saved.catalog
+MockClass=saved.class; MockClassID=saved.classID; MockLevel=saved.level
+Owned=saved.owned; FakeInventory=saved.inventory; Completed=saved.completed
+XC.sourceSelection=saved.sourceSelection; XC.journalSourceSelection=saved.journalSourceSelection
+for id in pairs(JournalUICatalog) do ItemInfo[id]=nil end
+XC:ShowPage("gear"); XC:Refresh(); assert(XC.window.journal:IsShown())
+JournalUITest=nil; JournalUICatalog=nil
+''')
+
 # Texture packaging checks do not depend on the client double.
 import struct
 for filename,size in [("IconRound.tga",64),("LogoRound.tga",256)]:
@@ -840,7 +1060,7 @@ def export_layout(name):
     lua.execute('for i,f in ipairs(Frames) do f.exportID=i end; for _,f in ipairs(Frames) do f.parentID=f.parent and f.parent.exportID or nil; f.visible=f:IsShown() end')
     out=[]
     for f in lua.globals().Frames.values():
-        props={k:convert(f[k]) for k in ('exportID','parentID','kind','name','width','height','point','points','bg','border','text','color','texture','fontSize','fontPath','fontFlags','scale','backdrop','value','minValue','maxValue','justify','visible','checked','template','normalTexture','level') if f[k] is not None}
+        props={k:convert(f[k]) for k in ('exportID','parentID','kind','name','width','height','point','points','bg','border','text','color','texture','fontSize','fontPath','fontFlags','scale','backdrop','value','minValue','maxValue','justify','visible','checked','template','normalTexture','level','alpha','vertexColor','atlas','drawLayer','blendMode','styleRole') if f[k] is not None}
         if f.allPoints: props['fillParent']=True
         out.append(props)
     (ROOT/'research'/name).write_text(json.dumps(out))
@@ -873,5 +1093,15 @@ lua.execute('XC:ShowPage("gear"); XC.window:SetSize(900,720); XC:Appearance().te
 export_layout('layout-hunter-spec-min.json')
 lua.execute('MockClass="WARLOCK"; MockClassID=9; XC.db.profile="warlock_destruction"; XC:Refresh()')
 export_layout('layout-warlock-spec-min.json')
+
+lua.execute('XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry(); MockClass="MAGE"; MockClassID=8; MockLevel=21; XC.db.profile="mage_frost"; XC.db.options.solo=false; XC.db.options.crafted=true; XC.db.options.faction="alliance"; XC.db.journalUI={state="active",lane="all",limit=3,collapsed={}}; XC.window.journal.query=""; XC:ShowPage("gear"); XC:Refresh()')
+export_layout('layout-journal.json')
+lua.execute('XC.window:SetSize(900,720); UIParent:SetScale(.64); XC:Appearance().textBoost=2; XC:ApplyAppearance(); XC.W.SetWindowScale(XC.window,.8); MockClass="HUNTER"; MockClassID=3; XC.db.profile="hunter_survivalranged"; XC:Refresh(); XC.window.journal:ApplyLayout()')
+export_layout('layout-journal-min-large.json')
+lua.execute('UIParent:SetScale(1); XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry(); MockClass="MAGE"; MockClassID=8; XC.db.profile="mage_frost"; XC.db.journalUI.filters=true; XC.window.journal.query="Deadmines"; XC:Refresh(); XC.window.journal:ApplyLayout()')
+export_layout('layout-journal-filtered.json')
+lua.execute('XC.window.journal.query=""; XC.db.journalUI.filters=false; XC.db.journalUI.state="active"; XC:Refresh(); local row=XC.window.journal.selectedRow; if row then XC:RemoveJournalEntry(row) end; XC.db.journalUI.state="removed"; XC:RenderJournal(); XC.window.journal:ApplyLayout()')
+export_layout('layout-journal-removed.json')
+lua.execute('XC.db.journal.removed={}; XC.db.journalUI.state="active"; XC:Refresh(); XC.window.journal:ApplyLayout()')
 (ROOT/'research/test-results.json').write_text(json.dumps(dict(runtime='Lua 5.1 via lupa',passed=cases),indent=2))
-print(f'\n{len(cases)} test groups passed; fourteen layout fixtures exported.')
+print(f'\n{len(cases)} test groups passed; eighteen layout fixtures exported.')

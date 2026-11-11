@@ -1,0 +1,28 @@
+UPGRADE CROSSROADS 0.6.3 - ONE CONTINUOUS JOURNAL PANORAMA
+
+Both panes now share one original wide painting. Mountains, valley and terrain
+continue across the middle instead of repeating as a second version. A pale
+parchment wash over the right side keeps its dark text readable.
+
+GAME INSTALL
+Close WoW, extract UpgradeCrossroads-v0.6.3-forever.zip and replace the existing
+UpgradeCrossroads folder in Interface/AddOns. Keep your WTF/SavedVariables.
+Restart the client so the new texture filename is available. /uc status should
+say v0.6.3. Open /uc and inspect the continuous scene across both journal panes.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.6.3-source-update.zip into C:\Dev\UpgradeCrossroads,
+replacing its files. The ZIP includes the complete changes from public v0.5.3
+through v0.6.3, including Core/Journal.lua, UI/Journal.lua and the TOC. It can be
+applied over v0.5.3, v0.6.0, v0.6.1 or v0.6.2. The install ZIP belongs in the
+game; the source update belongs in your project.
+
+If you previously copied the 0.6.1/0.6.2 files, remove the two obsolete files
+UpgradeCrossroads/Media/JournalLandscape.tga and
+UpgradeCrossroads/Media/JournalParchment.tga from your project and game addon
+folder. They are no longer used. Keep the original PNG masters under art/.
+
+All prior comparison, hunts/notes, tracker, map, chat, filters, custom weights,
+appearance and resizing features remain. Data is still the October 13 snapshot.
+Offline checks and previews are not a live WoW test. No release tag or CurseForge
+upload has been created by this update.

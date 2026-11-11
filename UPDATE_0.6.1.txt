@@ -1,0 +1,21 @@
+UPGRADE CROSSROADS 0.6.1 - SCENIC JOURNAL SKIN
+
+The source-update ZIP includes the complete journal revision from v0.5.3 and its
+new scenic skin. You can apply it over v0.5.3 or v0.6.0.
+
+GAME INSTALL
+Close WoW, extract UpgradeCrossroads-v0.6.1-forever.zip and replace the existing
+UpgradeCrossroads folder in Interface/AddOns. Keep your WTF/SavedVariables.
+Restart the client so the new texture filename is available. /uc status should
+say v0.6.1. Open /uc for the journal, scenery and title-bar/frame changes.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.6.1-source-update.zip into C:\Dev\UpgradeCrossroads,
+replacing its files. It includes Core/Journal.lua, UI/Journal.lua and the TOC,
+not only the new texture, so it can upgrade the public v0.5.3 source directly.
+The install ZIP belongs in the game; the source update belongs in your project.
+
+All prior comparison, hunts/notes, tracker, map, chat, filters, custom weights,
+appearance and resizing features remain. Data is still the October 13 snapshot.
+Offline checks and previews are not a live WoW test. No release tag or CurseForge
+upload has been created by this update.

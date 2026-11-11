@@ -1,0 +1,23 @@
+UPGRADE CROSSROADS 0.6.2 - ILLUSTRATED DETAIL PANE
+
+The right journal pane now has a faint mountain illustration embedded in its
+parchment. Both sides use original project artwork, with dark readable text on
+the paper and a separate veil over the left landscape.
+
+GAME INSTALL
+Close WoW, extract UpgradeCrossroads-v0.6.2-forever.zip and replace the existing
+UpgradeCrossroads folder in Interface/AddOns. Keep your WTF/SavedVariables.
+Restart the client so the new texture filename is available. /uc status should
+say v0.6.2. Open /uc and inspect the illustrated right-hand detail pane.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.6.2-source-update.zip into C:\Dev\UpgradeCrossroads,
+replacing its files. The ZIP includes the complete changes from public v0.5.3
+through v0.6.2, including Core/Journal.lua, UI/Journal.lua and the TOC. It can be
+applied over v0.5.3, v0.6.0 or v0.6.1. The install ZIP belongs in the game; the
+source update belongs in your project.
+
+All prior comparison, hunts/notes, tracker, map, chat, filters, custom weights,
+appearance and resizing features remain. Data is still the October 13 snapshot.
+Offline checks and previews are not a live WoW test. No release tag or CurseForge
+upload has been created by this update.

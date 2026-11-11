@@ -1,0 +1,23 @@
+UPGRADE CROSSROADS - CONTINUOUS JOURNAL PANORAMA
+
+Original artwork generated for this project with the built-in image tool,
+using art/JournalLandscape.png as the project's own style/motif reference.
+Source: art/JournalPanorama.png, 1774x887.
+Client asset: UpgradeCrossroads/Media/JournalPanorama.tga, 1024x512 RGBA.
+Conversion is a format/size export; no GearQuest artwork is included.
+
+Prompt summary: one extra-wide continuous fantasy mountain range and valley,
+one viewpoint and unrepeated landmarks. Forested slopes, a winding stream/path
+and one ruined arch toward the far lower right. Dark slate-blue/teal painting
+on the left approximately 42 percent transitions through a soft irregular
+parchment wash into pale golden-cream paper and faint sepia terrain on the right.
+Ridgelines, valley, trees and stream continue across the center without a seam,
+mirror, restart, comparison panel or hard dividing line. Quiet text areas, no
+lettering, labels, symbols, characters, UI controls, borders or logos.
+
+Rebuild/check: python tools/prepare_journal_art.py [--check].
+One shared background texture spans both journal panes and their center gap.
+Separate color-only readability washes may darken the list and lighten the
+detail pane; they contain no scenery and do not restart the shared picture.
+The earlier separate landscape/parchment source masters remain as history;
+their client exports are no longer used or shipped.

@@ -159,6 +159,7 @@ end
 function XC:Refresh()
     if not self.db then return end
     self.context=C.Context()
+    if self.InvalidateJournal then self:InvalidateJournal() end
     self:MigrateProfiles(self.context.class)
     if not self.Rules.FactionLabels[self.db.options.faction] and self.context.side~=0 then
         self.db.options.faction=self.Rules.FactionMode(self.db.options,self.context)

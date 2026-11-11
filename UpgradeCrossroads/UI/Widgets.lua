@@ -1,17 +1,19 @@
 local _, XC = ...
 local W={}
 XC.W=W
-W.panels={}; W.fonts={}; W.windows={}; W.bars={}; W.buttons={}
+W.panels={}; W.fonts={}; W.windows={}; W.bars={}; W.buttons={}; W.questSurfaces={}; W.ornateShells={}; W.journalPanoramas={}
 local dialog={bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",edgeSize=12,insets={left=3,right=3,top=3,bottom=3}}
 local inset={bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1}
-local function appearance() return XC.db and XC.Appearance and XC:Appearance() or {opacity=1,textBoost=0,readable=true,outline=false,font="plain"} end
+local function appearance() return XC.db and XC.Appearance and XC:Appearance() or {opacity=1,textBoost=0,readable=true,outline=false,font="classic"} end
 function W.Font(record)
     local a=appearance(); local effective=record.parent:GetEffectiveScale()
     local pixels=math.floor((record.size+a.textBoost)*effective+.5)
     if a.readable then pixels=math.max(12+a.textBoost,pixels) end
-    local font=(record.heading or a.font=="classic") and "Fonts\\FRIZQT__.TTF" or "Fonts\\ARIALN.TTF"
-    record.object:SetFont(font,math.max(1,pixels)/effective,a.outline and "OUTLINE" or "")
-    record.object:SetShadowOffset(a.outline and 0 or 1,a.outline and 0 or -1)
+    local standard=type(STANDARD_TEXT_FONT)=="string" and STANDARD_TEXT_FONT~="" and STANDARD_TEXT_FONT or "Fonts\\FRIZQT__.TTF"
+    local font=(record.heading or a.font=="classic") and standard or "Fonts\\ARIALN.TTF"
+    local outline=a.outline and not record.paper
+    record.object:SetFont(font,math.max(1,pixels)/effective,outline and "OUTLINE" or "")
+    record.object:SetShadowOffset((outline or record.paper) and 0 or 1,(outline or record.paper) and 0 or -1)
     if record.object.inputPanel then record.object.inputPanel:SetHeight(math.max(record.object.inputBaseHeight,math.max(1,pixels)/effective+8)) end
 end
 function W.RegisterFont(object,parent,size,color,heading)
@@ -46,6 +48,9 @@ function W.ApplyTheme()
     end
     for _,record in ipairs(W.fonts) do if record.color then record.object:SetTextColor(unpack(record.color)) end; W.Font(record) end
     for _,bar in ipairs(W.bars) do bar.object:SetColorTexture(unpack(bar.color)) end
+    for _,surface in ipairs(W.questSurfaces) do surface:ApplySurfaceTheme(a) end
+    for _,shell in ipairs(W.ornateShells) do shell:ApplyOrnateTheme(a) end
+    for _,panorama in ipairs(W.journalPanoramas) do panorama:SetAlpha(math.max(.94,a.opacity or 1)) end
 end
 local backdrop={bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\Buttons\\WHITE8X8",edgeSize=1}
 function W.Panel(parent,width,height,color)
@@ -66,6 +71,168 @@ function W.Text(parent,text,size,color,width,heading)
     if width then f:SetWidth(width); f:SetWordWrap(true) end
     f:SetText(text or "")
     return f
+end
+
+-- Original journal paintings sit inside native dialog borders. Keep parchment
+-- and its ink paired: a custom accent or transparent outer frame must not turn
+-- the description into pale text on pale paper, or dark text over the world.
+local journalInk={.18,.12,.065}
+local journalHeadingInk={.25,.13,.045}
+local journalSelected={.95,.82,.45}
+function W.JournalPanorama(parent)
+    local texture=parent:CreateTexture(nil,"BACKGROUND")
+    texture:SetTexture("Interface\\AddOns\\UpgradeCrossroads\\Media\\JournalPanorama")
+    texture.styleRole="journalPanorama"
+    texture:SetAlpha(math.max(.94,appearance().opacity or 1))
+    W.journalPanoramas[#W.journalPanoramas+1]=texture
+    return texture
+end
+function W.QuestSurface(parent,kind,shared)
+    local paper=kind=="parchment"
+    local f=CreateFrame("Frame",nil,parent,"BackdropTemplate")
+    f:SetAllPoints(parent); f.surfaceKind=paper and "parchment" or "list"; f.sharedPanorama=shared and true or false
+    f:SetBackdrop({bgFile=not shared and "Interface\\Buttons\\WHITE8X8" or nil,edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",edgeSize=16,insets={left=6,right=6,top=6,bottom=6}})
+    if shared then
+        -- Color-only glazing preserves the one scene underneath. Its contrast
+        -- follows the pane boundaries when large fonts change their split.
+        f.wash=f:CreateTexture(nil,"BACKGROUND")
+        f.wash:SetPoint("TOPLEFT",6,-6); f.wash:SetPoint("BOTTOMRIGHT",-6,6)
+        if paper then f.wash:SetColorTexture(.90,.72,.43,.68)
+        else f.wash:SetColorTexture(.008,.014,.018,.62) end
+        f.wash.styleRole=paper and "journalPaperWash" or "journalListWash"
+    end
+    if not shared then
+        f.background=f:CreateTexture(nil,"BACKGROUND")
+        f.background:SetPoint("TOPLEFT",6,-6); f.background:SetPoint("BOTTOMRIGHT",-6,6)
+        f.background:SetTexture(paper and "Interface\\QuestFrame\\QuestBG" or "Interface\\DialogFrame\\UI-DialogBox-Background")
+        f.background.styleRole=paper and "nativeJournalParchment" or "nativeJournalList"
+        if not paper then
+            f.veil=f:CreateTexture(nil,"BACKGROUND",nil,1)
+            f.veil:SetPoint("TOPLEFT",6,-6); f.veil:SetPoint("BOTTOMRIGHT",-6,6)
+            f.veil:SetColorTexture(.008,.014,.018,.43); f.veil.styleRole="journalLandscapeVeil"
+        end
+    end
+    function f:ApplySurfaceTheme(a)
+        local opacity=math.max(paper and .94 or .82,a.opacity or 1)
+        if self.sharedPanorama then self:SetBackdropColor(0,0,0,0)
+        elseif paper then self:SetBackdropColor(.88,.78,.58,opacity)
+        else self:SetBackdropColor(.025,.035,.04,opacity) end
+        if paper then self:SetBackdropBorderColor(.32,.23,.12,1)
+        else self:SetBackdropBorderColor(.57,.43,.23,1) end
+        if self.background and self.background.SetAlpha then self.background:SetAlpha(opacity) end
+    end
+    f:ApplySurfaceTheme(appearance()); W.questSurfaces[#W.questSurfaces+1]=f
+    return f
+end
+
+-- An ornamental skin on the existing shell, not another window. Every element
+-- is a texture on its background/border layers, so the real title, emblem,
+-- native close control and resize grip retain their input and frame ordering.
+function W.OrnateShell(f)
+    if f.ornateSkin then return f.ornateSkin end
+    local skin={}; f.ornateSkin=skin
+    local function texture(role,layer)
+        local t=f:CreateTexture(nil,layer or "BACKGROUND")
+        t.styleRole=role
+        return t
+    end
+    skin.header=texture("ornateHeader")
+    skin.header:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Background")
+    if skin.header.SetVertexColor then skin.header:SetVertexColor(.85,.65,.40,1) end
+    skin.headerTint=texture("ornateHeaderTint")
+    skin.headerTint:SetColorTexture(.22,.105,.037,.68)
+    skin.topRule=texture("ornateHeaderTopRule","BORDER")
+    skin.topShadow=texture("ornateHeaderTopShadow","BORDER")
+    skin.bottomRule=texture("ornateHeaderBottomRule","BORDER")
+    skin.bottomShadow=texture("ornateHeaderBottomShadow","BORDER")
+    skin.footerRule=texture("ornateFooterRule","BORDER")
+    skin.seal=texture("ornateEmblemRing","BORDER")
+    skin.seal:SetTexture("Interface\\Minimap\\MiniMap-TrackingBorder")
+    skin.seal:SetSize(52,52); W.Place(skin.seal,8,1)
+    skin.rivets={}
+    for i=1,4 do
+        local shadow=texture("ornateRivetShadow","BORDER")
+        local rivet=texture("ornateRivet","BORDER")
+        shadow:SetColorTexture(.07,.045,.018,1); shadow:SetSize(7,7)
+        rivet:SetColorTexture(.72,.54,.26,1); rivet:SetSize(4,4)
+        skin.rivets[i]={shadow=shadow,face=rivet}
+    end
+    function skin:Layout()
+        local width,height=f:GetWidth(),f:GetHeight()
+        local headerHeight=math.max(44,(f.title and f.title:GetStringHeight() or 28)+16)
+        W.Place(self.header,8,6); self.header:SetSize(width-16,headerHeight)
+        W.Place(self.headerTint,8,6); self.headerTint:SetSize(width-16,headerHeight)
+        W.Place(self.topShadow,20,7); self.topShadow:SetSize(width-40,2)
+        W.Place(self.topRule,20,9); self.topRule:SetSize(width-40,1)
+        W.Place(self.bottomRule,18,6+headerHeight); self.bottomRule:SetSize(width-36,2)
+        W.Place(self.bottomShadow,18,8+headerHeight); self.bottomShadow:SetSize(width-36,2)
+        W.Place(self.footerRule,20,height-9); self.footerRule:SetSize(width-40,1)
+        local positions={{13,13},{width-19,13},{13,height-20},{width-19,height-20}}
+        for i,point in ipairs(positions) do
+            W.Place(self.rivets[i].shadow,point[1],point[2])
+            W.Place(self.rivets[i].face,point[1]+1,point[2]+1)
+        end
+    end
+    function f:ApplyOrnateTheme(a)
+        self:SetBackdrop({bgFile="Interface\\Buttons\\WHITE8X8",edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",edgeSize=32,insets={left=8,right=8,top=8,bottom=8}})
+        self:SetBackdropColor(XC.Colors.bg[1],XC.Colors.bg[2],XC.Colors.bg[3],a.opacity or 1)
+        self:SetBackdropBorderColor(unpack(XC.Colors.border))
+        skin.header:SetAlpha(a.opacity or 1)
+        skin.headerTint:SetAlpha(a.opacity or 1)
+        local accent=XC.Colors.gold
+        skin.topRule:SetColorTexture(accent[1],accent[2],accent[3],.72)
+        skin.bottomRule:SetColorTexture(accent[1],accent[2]*.88,accent[3]*.72,.95)
+        skin.footerRule:SetColorTexture(accent[1],accent[2]*.8,accent[3]*.7,.44)
+        skin.topShadow:SetColorTexture(.02,.014,.008,.9)
+        skin.bottomShadow:SetColorTexture(.015,.01,.006,.95)
+    end
+    local previous=f.ApplyLayout
+    f.ApplyLayout=function(...)
+        if previous then previous(...) end
+        skin:Layout()
+    end
+    f:HookScript("OnSizeChanged",function() skin:Layout() end)
+    W.ornateShells[#W.ornateShells+1]=f
+    f:ApplyOrnateTheme(appearance()); skin:Layout()
+    return skin
+end
+function W.JournalText(parent,text,size,width,heading)
+    local f=parent:CreateFontString(nil,"OVERLAY")
+    local color=heading and journalHeadingInk or journalInk
+    local record=W.RegisterFont(f,parent,size or 14,color,heading)
+    record.paper=true; W.Font(record)
+    f:SetTextColor(unpack(color)); f:SetJustifyH("LEFT"); f:SetJustifyV("TOP")
+    if width then f:SetWidth(width); f:SetWordWrap(true) end
+    f:SetText(text or "")
+    return f
+end
+function W.JournalRow(parent,text,width,height,handler)
+    local b=CreateFrame("Button",nil,parent); b:SetSize(width,height or 27)
+    b.isRow=true; b.isJournalRow=true
+    b.highlight=b:CreateTexture(nil,"BACKGROUND"); b.highlight:SetAllPoints()
+    b.highlight:SetTexture("Interface\\QuestFrame\\UI-QuestLogTitleHighlight")
+    if b.highlight.SetBlendMode then b.highlight:SetBlendMode("ADD") end
+    b.highlight:Hide()
+    b.label=b:CreateFontString(nil,"OVERLAY")
+    b.labelRecord=W.RegisterFont(b.label,b,13,XC.Colors.text)
+    b.label:SetPoint("LEFT",10,0); b.label:SetWidth(width-20)
+    b.label:SetTextColor(unpack(XC.Colors.text)); b.label:SetJustifyH("LEFT"); b.label:SetJustifyV("MIDDLE")
+    b.label:SetWordWrap(false); b.label:SetText(text or "")
+    function b:JournalHover(hover)
+        self.journalHovered=hover
+        self.highlight:SetShown(self.selected or hover)
+        if self.highlight.SetAlpha then self.highlight:SetAlpha(self.selected and .8 or .38) end
+    end
+    b:SetScript("OnEnter",function(self) self:JournalHover(true) end)
+    b:SetScript("OnLeave",function(self) self:JournalHover(false) end)
+    if handler then b:SetScript("OnClick",handler) end
+    return b
+end
+function W.SelectJournalRow(b,selected,color)
+    if color then b.journalColor=color end
+    local chosen=selected and journalSelected or b.journalColor or XC.Colors.text
+    b.selected=selected; b.labelRecord.color=chosen
+    b.label:SetTextColor(unpack(chosen)); b:JournalHover(b.journalHovered)
 end
 function W.Bar(parent,color,width,height)
     local t=parent:CreateTexture(nil,"ARTWORK")
@@ -127,6 +294,7 @@ function W.Input(parent,width,height,multiline)
 end
 function W.Tooltip(frame,item,shortcut)
     frame:SetScript("OnEnter",function(self)
+        if self.JournalHover then self:JournalHover(true) end
         local _,_,link=XC.Client.Presentation(item)
         GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
         if link then GameTooltip:SetHyperlink(link)
@@ -135,7 +303,7 @@ function W.Tooltip(frame,item,shortcut)
         GameTooltip:AddLine("Ctrl-click: dressing room",.6,.7,.8,true)
         GameTooltip:Show()
     end)
-    frame:SetScript("OnLeave",function() GameTooltip:Hide() end)
+    frame:SetScript("OnLeave",function(self) if self.JournalHover then self:JournalHover(false) end; GameTooltip:Hide() end)
 end
 
 -- Native resizing, saved per character. Content lays out again at the new size;

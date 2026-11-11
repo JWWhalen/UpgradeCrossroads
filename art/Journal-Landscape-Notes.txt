@@ -1,0 +1,18 @@
+HISTORICAL 0.6.1 ARTWORK - SUPERSEDED BY THE 0.6.3 CONTINUOUS PANORAMA
+
+UPGRADE CROSSROADS - JOURNAL LANDSCAPE
+
+Original artwork generated for this project with the built-in image tool.
+Source: art/JournalLandscape.png, 1024x1536.
+Client asset: UpgradeCrossroads/Media/JournalLandscape.tga, 512x1024 RGBA.
+Conversion is a format/size export; the painting is not borrowed from GearQuest.
+
+Prompt summary: original painted fantasy mountain valley, jagged slate-blue
+peaks, mist, evergreen slopes, a stone path and stream, a small weathered ruin;
+dark blue-green/teal with restrained amber light, quiet enough for item-list text;
+no lettering, characters, logos, UI elements or frames.
+
+The former client export is no longer shipped or used. The current export
+command builds JournalPanorama instead; retain this PNG as design history.
+The texture fills its list surface; the UI adds a separate dark veil so text
+remains readable without permanently darkening the source painting.

@@ -13,6 +13,12 @@ ignore:
   - dist
   - requirements-dev.txt
   - START_HERE.txt
+  - UPDATE_0.6.0.txt
+  - UPDATE_0.6.1.txt
+  - UPDATE_0.6.2.txt
+  - UPDATE_0.6.3.txt
+  - UPDATE_0.6.4.txt
+  - UPDATE_0.6.5.txt
   - VALIDATION.md
   - DEVELOPMENT_AND_MAINTENANCE.txt
   - CHANGELOG.txt

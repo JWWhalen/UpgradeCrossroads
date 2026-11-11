@@ -2,7 +2,7 @@
 ## Title: Upgrade Crossroads
 ## Notes: Compare reliable upgrades, dungeon hunts and long-term gear goals.
 ## Author: FlakieGames
-## Version: 0.5.3
+## Version: 0.6.5
 ## X-Curse-Project-ID: 1793236
 ## OptionalDeps: QuestieDB, Questie
 ## SavedVariablesPerCharacter: UpgradeCrossroadsDB
@@ -15,10 +15,12 @@ Data\Locations.lua
 Core\Rules.lua
 Core\Client.lua
 Core\Navigation.lua
+Core\Journal.lua
 UI\Widgets.lua
 UI\Appearance.lua
 UI\Guide.lua
 UI\Main.lua
+UI\Journal.lua
 UI\TargetEditor.lua
 UI\Minimap.lua
 Core\Init.lua

@@ -142,3 +142,53 @@ stat sticks as if they were the Hunter's shot weapon.
 
 These changes do not refresh Catalog.lua: its underlying snapshot remains
 2026-10-13 with the Forever/Classic coverage limitations recorded above.
+
+## Quest journal design reference (0.6.0)
+
+The requested reference was GearQuest Forever's public quest-log workflow and
+gallery, reviewed November 10, 2026:
+
+- https://www.curseforge.com/wow/addons/gearquest-forever
+- https://www.curseforge.com/wow/addons/gearquest-forever/gallery
+
+Crossroads implements its own equipment groups, item-detail parchment, item
+actions and Active/Completed/Removed lifecycle on its existing data and scoring.
+No GearQuest source code, hunt database, custom artwork or brand assets are
+included. Surfaces use Blizzard quest/dialog UI resources supplied by the game;
+the Crossroads emblem is the previously approved project asset. Offline previews
+substitute native art and fonts and are labeled accordingly.
+
+## Original scenic skin (0.6.1)
+
+The mountain-valley background is original generated project artwork, not a
+GearQuest asset. The source is art/JournalLandscape.png; the client export is
+Media/JournalLandscape.tga, built and checked by tools/prepare_journal_art.py.
+art/Journal-Landscape-Notes.txt records its provenance and prompt summary.
+The title bar and borders reference the game's own dialog/minimap resources.
+Offline previews load the actual bundled scenery while approximating those
+native textures and fonts. They are not live-client captures.
+
+## Original illustrated parchment (0.6.2)
+
+The right detail pane's paper is original project artwork generated from the
+project's mountain-valley painting as a faint sepia illustration on parchment.
+It does not use GearQuest's custom artwork. The source is
+art/JournalParchment.png; the client export is Media/JournalParchment.tga.
+art/Journal-Parchment-Notes.txt records its provenance and prompt summary.
+tools/prepare_journal_art.py checks both original scenery exports. Offline
+previews render the bundled paper pixels; native frame/font substitutions
+remain approximations and are labeled accordingly.
+
+## Original continuous panorama (0.6.3)
+
+One original wide landscape now spans both journal panes and their center gap.
+It reinterprets the project's own mountain-landscape motif as an uninterrupted
+scene, with cool dark painting on the left fading into pale parchment and faint
+sepia terrain on the right. It does not repeat the scene or use GearQuest art.
+The master is art/JournalPanorama.png; the client export is
+Media/JournalPanorama.tga, built/checked by tools/prepare_journal_art.py.
+art/Journal-Panorama-Notes.txt records its provenance and prompt summary.
+Earlier landscape/parchment PNG masters remain as design history, while their
+separate client TGA exports are no longer shipped or used. Offline previews
+render the actual shared canvas; native frame/font substitutions remain labeled.
+Pane-local readability washes are color tints, not repeated illustrations.

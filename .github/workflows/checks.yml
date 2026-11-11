@@ -20,6 +20,7 @@ jobs:
       - run: python tools/audit_catalog.py
       - run: python tests/run_tests.py
       - run: python tools/prepare_logo.py --check
+      - run: python tools/prepare_journal_art.py --check
       - run: python tools/review_layouts.py
       - run: python tools/package_release.py
       - uses: actions/upload-artifact@v4

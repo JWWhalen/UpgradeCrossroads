@@ -1,0 +1,21 @@
+HISTORICAL 0.6.2 ARTWORK - SUPERSEDED BY THE 0.6.3 CONTINUOUS PANORAMA
+
+UPGRADE CROSSROADS - ILLUSTRATED JOURNAL PARCHMENT
+
+Original artwork generated for this project with the built-in image tool,
+using art/JournalLandscape.png as the project's own reference/edit target.
+Source: art/JournalParchment.png, 1024x1536.
+Client asset: UpgradeCrossroads/Media/JournalParchment.tga, 512x1024 RGBA.
+Conversion is a format/size export; the illustration is not a GearQuest asset.
+
+Prompt summary: transform the original mountain valley into very low-contrast
+faded sepia illustration embedded in warm golden-cream parchment. Preserve the
+mountain-valley motif and a small ruined arch near the lower right, with faint
+evergreens. Concentrate illustration toward the right edge and lower half;
+keep the upper/central left pale and quiet for dark body text. Fine paper grain,
+subtly worn rectangular edges, no text, labels, logos, characters, UI or frames.
+
+The former client export is no longer shipped or used. The current export
+command builds JournalPanorama instead; retain this PNG as design history.
+The texture fills the right detail surface beneath the existing dark ink and
+controls, preserving the paper's readability opacity floor.

@@ -15,7 +15,7 @@ function XC:Appearance()
     a.textBoost=math.max(0,math.min(2,math.floor(tonumber(a.textBoost) or 0)))
     if a.readable==nil then a.readable=true end
     if a.outline==nil then a.outline=false end
-    if a.font~="classic" then a.font="plain" end
+    if a.font~="plain" then a.font="classic" end
     return a
 end
 function XC.ParseHex(hex)
@@ -78,7 +78,7 @@ function XC:BuildAppearance()
         a.theme=self.ThemeOrder[index%#self.ThemeOrder+1]; a.background=nil; a.accent=nil; a.border=nil; self:ApplyAppearance()
     end),28,31)
     W.Place(W.Text(body,"Font",13,self.Colors.gold),330,8)
-    f.font=W.Place(W.Button(body,"",280,30,function() local a=self:Appearance(); a.font=a.font=="classic" and "plain" or "classic"; self:ApplyAppearance() end),330,31)
+    f.font=W.Place(W.Button(body,"",280,30,function() local a=self:Appearance(); a.font=a.font=="classic" and "plain" or "classic"; a.fontChosen=true; self:ApplyAppearance() end),330,31)
     f.opacityLabel=W.Place(W.Text(body,"",13,self.Colors.gold),28,81)
     local slider=CreateFrame("Slider","UpgradeCrossroadsOpacitySlider",body,"OptionsSliderTemplate"); f.opacity=slider
     W.Place(slider,36,112); slider:SetSize(566,18); slider:SetMinMaxValues(0,100); slider:SetValueStep(5)
@@ -130,7 +130,7 @@ function XC:SyncAppearance()
     local f=self.appearanceWindow; if not f then return end
     local a=self:Appearance(); f.syncing=true
     f.preset.label:SetText(self.Themes[a.theme].label.."  >")
-    f.font.label:SetText(a.font=="classic" and "WoW fantasy font  >" or "Plain readable font  >")
+    f.font.label:SetText(a.font=="classic" and "WoW standard font  >" or "Plain readable font  >")
     f.opacityLabel:SetText("Background opacity: "..math.floor(a.opacity*100+.5).."%")
     f.opacity:SetValue(a.opacity*100)
     f.readable:SetChecked(a.readable); f.outline:SetChecked(a.outline)

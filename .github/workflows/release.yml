@@ -44,6 +44,8 @@ jobs:
 
       - name: Check logo assets
         run: python tools/prepare_logo.py --check
+      - name: Check journal landscape
+        run: python tools/prepare_journal_art.py --check
 
       - name: Check window layouts
         run: python tools/review_layouts.py
