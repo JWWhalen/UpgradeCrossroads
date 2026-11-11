@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.6.5
+UPGRADE CROSSROADS 0.7.0
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -28,12 +28,16 @@ your bags/equipment or acquired saved hunts; it is not a full historic collectio
 Removed hides an item until you restore it, preserving its hunt notes/checklists.
 Use Filters for source paths, Solo, Crafts, AH and Alliance/Horde/Both. Available
 now uses your current level; Future goals includes later levels. The left search
-matches item, boss, quest and zone names across every slot. Choose 1/3/5/10 picks
-per slot; these ranks use model weights, not verified BiS or a simulation.
+matches item, boss, quest and zone names across the selected equipment filter.
+Choose 1/3/5/10 or All picks per slot; All keeps every matching item reachable.
+These ranks use model weights, not verified BiS or a simulation.
 
-Compare retains the detailed single-slot Quest & craft, Dungeons and Future gear
-views. Hunts retains your saved preparation checklists and notes. All pages share
-the same window; appearance, minimap, scaling and source correction still work.
+Journal is the single gear-browsing page. Use Equipment to show all slots or
+choose one slot, then inspect the equipped item and candidate together in the
+detail pane. Equipped stats, model score and Chat stay with that comparison.
+Source paths remain in Filters. Hunts retains your saved preparation checklists
+and notes. All pages share the same window; appearance, minimap, scaling and
+source correction still work.
 
 CLASS AND SPEC
 The spec button offers only the detected character class's choices: 29 choices
@@ -58,14 +62,14 @@ DPS does not inflate a ranged Hunter's stat-stick score. Forever Feral cat/bear
 presets include main-hand weapon DPS; form abilities and procs are not simulated.
 
 FACTION
-Gear has exactly three faction choices: Alliance, Horde and Both. It defaults
+Journal has exactly three faction choices: Alliance, Horde and Both. It defaults
 to the current character's faction, and saves your choice. Shared/untagged
 sources remain visible. Other filters still apply. Opposite-faction sources
 are labeled unavailable to this character. Saved hunts and notes are retained;
 source cycling only offers sources included by the selected faction view.
 
 ONE WINDOW, CLEANER TEXT
-Journal, Compare, Hunts, Settings, Help and Add item share one main window. One page
+Journal, Hunts, Settings, Help and Add item share one main window. One page
 is shown at a time. They share size, scale, position and a native close button;
 the tracker alone stays separate. Closing the shell hides every page.
 
@@ -83,6 +87,10 @@ deep cool terrain on the left into richer warm-tan aged parchment and faint
 sepia terrain on the right. Dark ink remains readable over the detail area;
 the artwork stays behind every control and follows the shared window when it
 is resized.
+
+Hunts, Help and Add item carry the same illustrated parchment, native framing
+and WoW typography. Inputs and action buttons keep their readable contrast.
+Settings keeps its simpler controls without an illustrated page background.
 
 The circular icon has transparent corners. There is no square minimap backdrop.
 Restart the client after installing its new texture filenames.
@@ -104,7 +112,7 @@ testing on your client. Not every prerequisite branch can be solved.
 All 411 dungeon-drop source links in this snapshot have a bundled outdoor
 approach mapping. This does not cover interior boss coordinates, every quest
 pickup or crafting materials. Unknown locations get a clear guide message.
-Set location in the guide opens a popup with that item/source already selected;
+Set location in the guide opens the embedded editor with that item/source selected;
 it saves a source correction, not a duplicate item. Custom item is for gear
 outside the catalog, not the normal tracking flow.
 
@@ -180,7 +188,7 @@ snapshot until a maintained data release replaces it.
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This v0.5.3 update has
+ownership changes, UI construction and command/event flows. This v0.7.0 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

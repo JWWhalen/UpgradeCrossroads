@@ -1,6 +1,34 @@
-# Upgrade Crossroads 0.6.5 validation
+# Upgrade Crossroads 0.7.0 validation
 
 Target: WoW: Forever, interface 16001. Built 2026-11-10.
+
+## Consolidated journal and content-page theme in 0.7.0
+
+Journal is the only visible gear-browsing page. Equipment selects one slot or
+all slots; the detail pane includes equipped item information and its Chat
+action along with the candidate's source, stats and model comparison. The
+legacy Compare page request redirects to Journal. Acquisition paths, source
+cycling, filters, ranking, chat, guides, saved hunts, notes and lifecycle views
+remain available.
+
+Hunts, Help and Add item use the same original panorama, aged-paper treatment,
+native frame references and WoW font as Journal. The Settings page keeps its
+plain controls and has no illustrated page background. This revision does not
+replace the art or refresh the dated catalog.
+
+All 88 automated groups and 21 strict offline layouts pass. New cases cover
+the five public tabs, slot-filter persistence, browsing beyond ten results,
+equipped comparisons and unsent chat even with no matching upgrade, shared
+page artwork, plain Settings, input contrast, and Largest-text control bounds.
+Editor fields, Help headings and hunt notes/actions use measured reflow. The
+old comparison frame stays hidden for compatibility; public Compare requests
+redirect to Journal.
+
+Default, themed and minimum-size pages were visually reviewed. The panorama
+source/export check also passes. Offline previews use substitute native
+frame/font/icon rendering and do not constitute an in-game test. Verify slot
+selection, equipped comparisons, page exclusivity, note editing, editor Cancel
+and readable scaling in the live client before publishing.
 
 ## Native default font in 0.6.5
 

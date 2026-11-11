@@ -57,6 +57,7 @@ test('complete native UI opens with catalog recommendations', '''
 SlashCmdList.UPGRADECROSSROADS("")
 assert(XC.window:IsShown())
 assert(XC.window.activePage=="gear" and XC.window.journal:IsShown() and not XC.window.pages.compare:IsShown())
+assert(not XC.window.nav.compare, "Journal is the only visible gear-browsing tab")
 assert(#XC.lanes.reliable>0 and #XC.lanes.dungeon>0 and #XC.lanes.longterm>0)
 assert(XC.window.lanes.reliable.name.text~="")
 for _,record in ipairs(XC.W.fonts) do assert(record.object.fontPath=="Fonts\\\\FRIZQT__.TTF") end
@@ -558,15 +559,21 @@ f.font.scripts.OnClick(); assert(XC:Appearance().font=="classic" and XC.window.p
 f.reset.scripts.OnClick(); assert(XC:Appearance().theme=="classic" and XC:Appearance().font=="classic" and not XC:Appearance().outline and XC.db.pins==pins)
 f:Hide()
 """)
-test('path tabs and item list inspect sources before one-click tracking', """
-XC:ShowPage("compare"); XC.db.slot=16; XC.search=""; XC:Refresh(); XC:SelectPath("dungeon")
-assert(XC.window.lanes.dungeon:IsShown() and not XC.window.lanes.reliable:IsShown())
-local c=XC.window.lanes.dungeon; local before=XC.db.activeHunt
-assert(c.items[2]:IsShown()); c.items[2].scripts.OnClick(c.items[2],"LeftButton")
-assert(XC.selection.dungeon==2 and XC.db.activeHunt==before)
-assert(c.name.text==XC:DisplayRow("dungeon").item.name)
-c.itemButton.scripts.OnClick(c.itemButton,"LeftButton"); assert(XC.db.activeHunt and XC.guide:IsShown())
-XC:ShowPage("compare"); XC.window.tabs.reliable.scripts.OnClick(); assert(XC.window.lanes.reliable:IsShown())
+test('journal acquisition filters inspect sources before one-click tracking', """
+XC:ShowPage("gear"); XC:SetJournalSlot(16)
+local p=XC.window.journal; p.clear.scripts.OnClick()
+XC.db.journalUI.state="active"; XC.db.journalUI.lane="all"; XC:Refresh()
+p.filterButton.scripts.OnClick(); p.lane.scripts.OnClick(); p.lane.scripts.OnClick()
+assert(XC.db.journalUI.lane=="dungeon" and #p.entries>1)
+local before=XC.db.activeHunt; local selected=p.entries[2]
+local button
+for _,b in ipairs(p.rows) do if b:IsShown() and b.label.text:find(selected.item.name,1,true) then button=b; break end end
+assert(button); button.scripts.OnClick(button,"LeftButton")
+assert(p.selectedRow.key==selected.key and XC.db.activeHunt==before)
+assert(p.title.text==selected.item.name and p.source.text~="")
+p.track.scripts.OnClick(); assert(XC.db.activeHunt and XC.guide:IsShown())
+XC:ShowPage("gear"); XC.db.journalUI.lane="all"; XC:SetJournalSlot(0)
+XC.db.journalUI.filters=false; p:ApplyLayout()
 """)
 test('native framing and approved logo paths are used consistently', """
 assert(XC.window.backdrop.bgFile:find("WHITE8X8",1,true) and XC.window.bg[4]==1)
@@ -576,10 +583,13 @@ assert(XC.window.headerIcon.texture:match("UpgradeCrossroads.+Media.+LogoRound$"
 """)
 test('page navigation is exclusive and never creates floating settings windows', """
 XC:ShowTargetEditor(); XC:ShowAppearance(); local root=XC.window
-for _,id in ipairs({"gear","compare","hunts","appearance","help","editor"}) do XC:ShowPage(id) end
+local public={"gear","hunts","appearance","help","editor"}
+for _,id in ipairs(public) do XC:ShowPage(id) end
+assert(not root.nav.compare)
+local navCount=0; for _ in pairs(root.nav) do navCount=navCount+1 end; assert(navCount==5)
 local count=#Frames
 for pass=1,4 do
- for _,id in ipairs({"gear","compare","hunts","appearance","help","editor"}) do
+ for _,id in ipairs(public) do
   XC:ShowPage(id); local shown=0
   for key,page in pairs(root.pages) do
    assert(page:GetParent()==root.pageHost and not page.resizable and not page.closeButton)
@@ -588,6 +598,8 @@ for pass=1,4 do
   assert(shown==1 and root.activePage==id)
  end
 end
+XC:ShowPage("compare")
+assert(root.activePage=="gear" and root.journal:IsShown() and not root.pages.compare:IsShown())
 assert(#Frames==count and root.toplevel and root.raised>0)
 """)
 test('native buttons use one measured label with no custom backdrop or tiny text chrome', """
@@ -873,6 +885,83 @@ assert(p.selectedRow.item.id==991103 and p.title.text=="Journal Pendant")
 assert(XC.db.activeHunt==nil and not next(XC.db.pins) and #Frames==before)
 assert(p.track:GetParent()==p.paper and p.map:GetParent()==p.paper)
 ''')
+test('journal equipment picker filters slots inline and preserves the saved choice', '''
+local p=XC.window.journal
+p.scroll:SetVerticalScroll(90); p.slotButton.scripts.OnClick()
+assert(p.slotPickerOpen and p.slotChoices[0] and p.slotChoices[1] and p.slotChoices[2])
+assert(p.slotChoices[2]:IsShown() and p.slotChoices[2]:GetParent()==p.child)
+p.slotChoices[2].scripts.OnClick()
+assert(not p.slotPickerOpen and XC.db.journalUI.slotID==2 and XC.db.slot==2)
+assert(#p.entries==1 and p.selectedRow.item.id==991103 and p.scroll:GetVerticalScroll()==0)
+FireEvent("ADDON_LOADED","UpgradeCrossroads"); XC:Refresh()
+XC:ShowHunts(); XC:ShowPage("gear")
+assert(XC.db.journalUI.slotID==2 and #p.entries==1 and p.selectedRow.slotID==2)
+XC:SetJournalSlot(999); assert(XC.db.journalUI.slotID==2)
+p.slotButton.scripts.OnClick(); p.slotChoices[0].scripts.OnClick()
+assert(XC.db.journalUI.slotID==0 and #p.entries==3 and not p.slotPickerOpen)
+-- The consolidated browser must retain access past the old ten-pick cap.
+for i=1,12 do
+ local id=992200+i; local name=string.format("Journal Extra Crown %02d",i)
+ JournalUICatalog[id]={id=id,name=name,quality=2,inv=1,classID=4,subclassID=1,req=1,stats={str=10+i},sources={{kind="vendor",name="Extra Crown Vendor",side=1}}}
+ ItemInfo[id]={name=name,quality=2,ilvl=20,req=1,equip="INVTYPE_HEAD",classID=4,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=10+i}}
+end
+XC:SetJournalSlot(1); XC.db.journalUI.limit=10; XC:RenderJournal()
+local function visibleItems()
+ local count=0
+ for _,b in ipairs(p.rows) do if b:IsShown() and b.label.text:find("Journal",1,true) then count=count+1 end end
+ return count
+end
+assert(#p.entries==14 and visibleItems()==10)
+p.limit.scripts.OnClick()
+assert(XC.db.journalUI.limit==0 and visibleItems()==14 and p.limit.label.text:find("All",1,true))
+assert(p.child.height>=14*28, "all matching rows need a reachable scroll range")
+local last
+for _,b in ipairs(p.rows) do if b:IsShown() and b.label.text:find("Journal Extra Crown 01",1,true) then last=b; break end end
+assert(last); last.scripts.OnClick(last,"LeftButton")
+assert(p.selectedRow.item.id==992201 and not XC.db.activeHunt)
+for i=1,12 do JournalUICatalog[992200+i]=nil; ItemInfo[992200+i]=nil end
+XC.db.journalUI.limit=3; XC:SetJournalSlot(0); XC:Refresh(); assert(#p.entries==3)
+''')
+test('journal equipped comparison distinguishes empty pending comparable and incompatible gear', '''
+local p=XC.window.journal; local profile=XC:GetProfile(XC.db.profile)
+XC:SetJournalSlot(1); FakeInventory={}; XC:Refresh()
+assert(not p.equippedItem and not p.equippedChat.enabled)
+assert(p.equippedName.text:lower():find("empty",1,true))
+FakeInventory[1]=991190
+ItemInfo[991190]={name="Equipped Training Crown",quality=2,ilvl=15,req=1,equip="INVTYPE_HEAD",classID=4,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=5}}
+XC:Refresh()
+local row=p.selectedRow; local equipped=p.equippedItem
+local score=XC.Rules.Score(equipped,profile.weights,row.slotID,profile.weaponDpsSlots)
+assert(equipped.id==991190 and p.equippedName.text:find("Equipped Training Crown",1,true))
+assert(p.equippedStats.text:find("5",1,true) and p.equippedScore.text:find(string.format("%.1f",score),1,true))
+assert(row.delta and math.abs(row.delta-(row.score-score))<.0001 and p.comparison.text:find("+",1,true))
+local sent=ChatSent; ChatActive=false; ChatDraft=""
+p.equippedChat.scripts.OnClick()
+assert(ChatDraft=="item:991190" and ChatSent==sent and not next(XC.db.pins))
+ItemInfo[991190].stats.ITEM_MOD_STRENGTH_SHORT=120; XC:Refresh()
+assert(#p.entries==0 and not p.selectedRow and p.empty:IsShown())
+assert(p.equippedItem.id==991190 and p.equippedChat.enabled and p.equippedChat:IsShown())
+assert(not p.track.enabled and not p.map.enabled, "an equipped-only slot cannot track a nonexistent candidate")
+ChatDraft=""; ChatActive=false; p.equippedChat.scripts.OnClick()
+assert(ChatDraft=="item:991190" and ChatSent==sent)
+FakeInventory[1]=991192; XC:Refresh()
+assert(not p.equippedItem and not p.equippedChat.enabled and p.equippedName.text:lower():find("loading",1,true))
+assert(not p.selectedRow.delta and not p.comparison.text:match("^%+"))
+JournalUICatalog[991105]={id=991105,name="Journal Two Hander",quality=3,inv=17,classID=2,subclassID=1,req=1,stats={str=10,dps=9},sources={{kind="vendor",name="Weapon Vendor",side=1}}}
+ItemInfo[991105]={name="Journal Two Hander",quality=3,ilvl=20,req=1,equip="INVTYPE_2HWEAPON",classID=2,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=10,ITEM_MOD_DAMAGE_PER_SECOND_SHORT=9}}
+ItemInfo[991191]={name="Equipped One Hander",quality=2,ilvl=15,req=1,equip="INVTYPE_WEAPONMAINHAND",classID=2,subclassID=7,stats={ITEM_MOD_STRENGTH_SHORT=2,ITEM_MOD_DAMAGE_PER_SECOND_SHORT=3}}
+FakeInventory={ [16]=991191 }; XC:SetJournalSlot(16); XC:Refresh()
+assert(p.selectedRow.item.id==991105 and p.equippedItem.id==991191 and not p.selectedRow.delta)
+assert(not p.comparison.text:match("^%+"), "different hand setups must not claim a direct upgrade")
+FakeInventory={ [3]=991193 }; XC:SetJournalSlot(3); XC:Refresh()
+assert(#p.entries==0 and not p.selectedRow and not p.equippedItem)
+assert(p.equippedName.text:lower():find("loading",1,true) and not p.equippedChat.enabled)
+assert(not p.track.enabled and not p.map.enabled)
+FakeInventory={}; JournalUICatalog[991105]=nil
+for _,id in ipairs({991105,991190,991191,991192,991193}) do ItemInfo[id]=nil end
+XC:SetJournalSlot(0); XC:Refresh()
+assert(#p.entries==3)
+''')
 test('journal item actions cycle sources map directly and draft unsent chat', '''
 local p=XC.window.journal
 p.rows[2].scripts.OnClick(p.rows[2],"LeftButton")
@@ -960,6 +1049,31 @@ assert(XC:GetProfile(XC.db.profile).weights.str~=3)
 XC:SetProfile(profile); assert(XC:GetProfile(profile).weights.str==3 and p.basis.text:find("Custom stat weights",1,true))
 XC.db.weights[profile]=prior; XC:Refresh()
 ''')
+test('journal theme carries to Hunts Help and Add Item while Settings stays plain', '''
+local root=XC.window; local p=root.journal
+XC:ShowHunts(); XC:ShowAbout(); XC:ShowTargetEditor(); XC:ShowAppearance()
+for _,page in ipairs({XC.huntWindow,XC.about,XC.editor}) do
+ local skin=page.themeSkin; assert(skin and skin.panorama and skin.wash and skin.border)
+ assert(skin.panorama:GetParent()==page and skin.wash:GetParent()==page)
+ local count=0
+ for _,region in ipairs(Frames) do
+  if region.texture and tostring(region.texture):find("JournalPanorama",1,true) then
+   local parent=region:GetParent()
+   while parent and parent~=page do parent=parent:GetParent() end
+   if parent==page then count=count+1 end
+  end
+ end
+ assert(count==1, "each content page shares a single scene behind its controls")
+end
+assert(not XC.appearanceWindow.themeSkin and not root.nav.compare)
+local row=XC.huntWindow.rows[1]; assert(row and row.name.color[1]<.5 and row.source.color[1]<.5)
+assert(XC.about.helpSections[1].text.color[1]<.5 and XC.editor.title.color[1]<.5)
+local opacity=XC:Appearance().opacity; XC:Appearance().opacity=0; XC:ApplyAppearance()
+assert(row.noteInput.bg[4]>=.92 and XC.editor.item.bg[4]>=.92)
+assert(XC.appearanceWindow.colorFields.accent.input.bg[4]==0, "Settings keeps its normal appearance controls")
+XC:Appearance().opacity=opacity; XC:ApplyAppearance()
+XC:ShowPage("gear")
+''')
 test('journal parchment scroll and fixed actions stay separate at minimum size and largest text', '''
 local p=XC.window.journal; XC.window:SetSize(900,720)
 XC:Appearance().textBoost=2; XC:ApplyAppearance(); XC.W.SetWindowScale(XC.window,.8)
@@ -972,7 +1086,10 @@ assert(navTop>=-root.title.point[3]+root.title:GetStringHeight()+4, "navigation 
 local profileBottom=-p.profile.point[3]+p.profile.height
 local introTop=-p.intro.point[3]; local introBottom=introTop+p.intro:GetStringHeight()
 assert(introTop>=profileBottom+8 and introTop>=-p.heading.point[3]+p.heading:GetStringHeight()+4)
+assert(p.intro.point[2]>=p.slotButton.point[2]+p.slotButton.width+8)
+assert(-p.slotButton.point[3]>=profileBottom+8)
 assert(-p.left.point[3]>=introBottom+8 and -p.paper.point[3]>=introBottom+8)
+assert(-p.left.point[3]>=-p.slotButton.point[3]+p.slotButton.height+8)
 if p.filters:IsShown() then
  assert(-p.filters.point[3]>=introBottom+8)
  assert(-p.left.point[3]>=-p.filters.point[3]+p.filters.height+8)
@@ -1015,15 +1132,42 @@ for _,record in ipairs(XC.W.fonts) do
   assert(record.object.color[1]<.5 and record.object.color[2]<.5 and record.object.shadowOffset[1]==0 and record.object.fontFlags=="")
  end
 end
-for _,id in ipairs({"compare","hunts","appearance","help"}) do
+for _,id in ipairs({"hunts","appearance","help","editor"}) do
  XC:ShowPage(id)
  assert(root.description:IsShown())
  local descriptionBottom=-root.description.point[3]+root.description:GetStringHeight()
- for _,b in pairs(root.nav) do assert(-b.point[3]>=descriptionBottom+8) end
  local navBottom=0
  for _,b in pairs(root.nav) do navBottom=math.max(navBottom,-b.point[3]+b.height) end
- assert(-root.pageHost.point[3]>=navBottom+8)
+ assert(-root.description.point[3]>=navBottom+8)
+ assert(-root.pageHost.point[3]>=descriptionBottom+8)
+ if id~="appearance" then
+  local page=root.pages[id]; local skin=page.themeSkin
+  assert(skin and skin.panorama.width==page.width-12 and skin.panorama.height==page.height-12)
+ end
 end
+XC:ShowHunts()
+local hunt=XC.huntWindow.rows[1]
+assert(-hunt.noteInput.point[3]>=-hunt.notesLabel.point[3]+hunt.notesLabel:GetStringHeight()+6)
+assert(hunt.noteInput.height>=hunt.noteInput.edit.fontSize+8)
+local actionBottom=0
+for _,button in ipairs({hunt.remove,hunt.map,hunt.chat}) do
+ assert(button.point[2]>=hunt.name.point[2]+hunt.name.width+8)
+ assert(button.point[2]+button.width<=hunt.width-8)
+ assert(-button.point[3]>=actionBottom+6 and -button.point[3]+button.height<=hunt.height-8)
+ actionBottom=-button.point[3]+button.height
+end
+XC:ShowAbout()
+for _,section in ipairs(XC.about.helpSections) do
+ assert(-section.text.point[3]>=-section.heading.point[3]+section.heading:GetStringHeight()+6)
+end
+XC:ShowTargetEditor()
+local editor=XC.editor
+for key,label in pairs(editor.formLabels) do
+ local field=key=="kind" and editor.kindButton or editor[key]
+ assert(-field.point[3]>=-label.point[3]+label:GetStringHeight()+6)
+ if field.edit then assert(field.height>=field.edit.fontSize+8) end
+end
+assert(-editor.save.point[3]>=-editor.status.point[3]+editor.status:GetStringHeight()+8)
 XC:ShowPage("gear")
 UIParent:SetScale(previous); XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
 ''')
@@ -1050,6 +1194,7 @@ for filename,size in [("IconRound.tga",64),("LogoRound.tga",256)]:
     assert texture.getpixel((size//2,size//2))[3]>240
 
 # Export fixtures from the ACTUAL Lua UI, including each window at its minimum.
+exported=[]
 def convert(x):
     if hasattr(x,'items'):
         if x.exportID: return {'ref':x.exportID}
@@ -1064,6 +1209,7 @@ def export_layout(name):
         if f.allPoints: props['fillParent']=True
         out.append(props)
     (ROOT/'research'/name).write_text(json.dumps(out))
+    exported.append(name)
 
 lua.execute('XC.db.activeHunt=nil; XC.db.custom={}; XC.db.pins={}; XC.db.slot=16; XC.db.profile="melee"; XC.db.path="reliable"; XC.db.options.solo=false; XC.db.options.crafted=true; XC:ShowPage("gear"); XC:Refresh()')
 export_layout('layout.json')
@@ -1103,5 +1249,12 @@ export_layout('layout-journal-filtered.json')
 lua.execute('XC.window.journal.query=""; XC.db.journalUI.filters=false; XC.db.journalUI.state="active"; XC:Refresh(); local row=XC.window.journal.selectedRow; if row then XC:RemoveJournalEntry(row) end; XC.db.journalUI.state="removed"; XC:RenderJournal(); XC.window.journal:ApplyLayout()')
 export_layout('layout-journal-removed.json')
 lua.execute('XC.db.journal.removed={}; XC.db.journalUI.state="active"; XC:Refresh(); XC.window.journal:ApplyLayout()')
+lua.execute('local pin=XC.db.pins["872"]; pin.notes="Confirm access, bring your group and keep the entrance pinned."; pin.checks[1]=true; XC:ShowHunts()')
+export_layout('layout-themed-hunts.json')
+lua.execute('XC:ShowAbout()')
+export_layout('layout-themed-help.json')
+lua.execute('local pin=XC.db.pins["872"]; XC:ShowTargetEditor({item=pin.item,source=pin.source},pin.lane)')
+export_layout('layout-themed-editor.json')
+lua.execute('XC:ShowPage("gear")')
 (ROOT/'research/test-results.json').write_text(json.dumps(dict(runtime='Lua 5.1 via lupa',passed=cases),indent=2))
-print(f'\n{len(cases)} test groups passed; eighteen layout fixtures exported.')
+print(f'\n{len(cases)} test groups passed; {len(exported)} layout fixtures exported.')

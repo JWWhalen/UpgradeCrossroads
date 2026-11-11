@@ -1,0 +1,39 @@
+UPGRADE CROSSROADS 0.7.0 - ONE GEAR JOURNAL, SHARED CONTENT THEME
+
+Journal is now the single gear-browsing page. Use Equipment to show all slots or
+choose one slot. The item detail pane includes the equipped item's stats, model
+score and Chat action, alongside the candidate and its source. Acquisition paths
+remain in Filters; the separate Compare tab is removed.
+The picks-per-slot control now includes All for unrestricted result browsing.
+
+Hunts, Help and Add item now share the darker panorama, aged parchment and native
+frame/font style. Settings keeps its simpler controls without a scenic page
+background. Saved hunts, preparation checks, notes and appearance choices remain.
+
+GAME INSTALL
+Close WoW completely. Extract UpgradeCrossroads-v0.7.0-forever.zip and replace the
+existing UpgradeCrossroads folder in Interface/AddOns. Keep WTF/SavedVariables.
+Restart the client. /uc status should report v0.7.0; /uc opens the Journal.
+
+SOURCE UPDATE
+Extract UpgradeCrossroads-v0.7.0-source-update.zip and copy its contents into
+C:\Dev\UpgradeCrossroads, replacing files. Apply it over your current v0.6.5
+project. The source update belongs in the development project; the install ZIP
+belongs in the game. Keep the original artwork masters under art/.
+
+CHECK IN GAME
+1. Confirm there are five tabs: Journal, Hunts, Settings, Help and Add item.
+2. Try Equipment with one slot, then all equipment. Inspect the equipped item,
+   candidate score/stats and the equipped item's unsent Chat draft.
+3. Try source selection, Track/map, item linking and the Active/Completed/Removed
+   views. Check saved hunts, preparation checks and notes.
+4. Open Hunts, Help and Add item. Confirm the shared illustrated style, readable
+   controls and scrolling. Settings should retain its simpler layout.
+5. Try Largest text, corner scaling and Shift-drag layout resizing. Close with X
+   and reopen. Check editor Cancel returns to the expected page.
+
+Older automatic font settings still migrate once to WoW's standard font. Plain
+remains selectable in Settings, and new explicit choices survive reloads.
+
+The artwork and October 13 catalog are unchanged. Offline previews are not live
+WoW captures. No release tag or CurseForge upload was created by this update.

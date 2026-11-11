@@ -19,6 +19,7 @@ ignore:
   - UPDATE_0.6.3.txt
   - UPDATE_0.6.4.txt
   - UPDATE_0.6.5.txt
+  - UPDATE_0.7.0.txt
   - VALIDATION.md
   - DEVELOPMENT_AND_MAINTENANCE.txt
   - CHANGELOG.txt

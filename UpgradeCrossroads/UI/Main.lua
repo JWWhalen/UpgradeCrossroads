@@ -249,13 +249,19 @@ function XC:Render()
 end
 function XC:BuildHunts()
     local f=W.Page(self.window,"hunts"); self.huntWindow=f
+    W.ThemedPage(f)
     f.hideObtained=at(W.Toggle(f,"Hide obtained",function(v) XC.db.hideObtained=v; XC:RenderHunts() end),12,8)
+    W.Paperize(f.hideObtained.label)
     f.hideObtained:SetChecked(self.db.hideObtained)
-    f.empty=at(W.Text(f,"No hunts to show. Track any item on the planner, or turn off Hide obtained.",14,self.Colors.text,700),18,70)
+    f.empty=at(W.JournalText(f,"No hunts to show. Track any item in the Journal, or turn off Hide obtained.",14,700),18,70)
     f.scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate"); f.scroll:SetPoint("TOPLEFT",12,-48); f.scroll:SetPoint("BOTTOMRIGHT",-30,12)
     f.child=CreateFrame("Frame",nil,f.scroll); f.child:SetSize(786,430); f.scroll:SetScrollChild(f.child); f.rows={}
     f.Layout=function(_,width,height)
         f.child:SetWidth(width-44); f.empty:SetWidth(width-40)
+        local headerHeight=math.max(24,f.hideObtained.label:GetStringHeight())
+        at(f.hideObtained,12,8+(headerHeight-24)/2)
+        local contentTop=headerHeight+20
+        f.scroll:SetPoint("TOPLEFT",12,-contentTop); at(f.empty,18,contentTop+18)
         if f:IsShown() and XC.context then XC:RenderHunts() end
     end
 end
@@ -269,27 +275,30 @@ function XC:RenderHunts()
     for i,pin in ipairs(pins) do
         local r=f.rows[i]
         if not r then
-            r=W.Panel(f.child,width,226,self.Colors.panel); f.rows[i]=r
-            r.name=at(W.Text(r,"",16,self.Colors.text,500),16,16); r.name:SetHeight(42)
+            r=W.PaperPanel(f.child,width,226); f.rows[i]=r
+            r.name=at(W.JournalText(r,"",16,500,true),16,16); r.name:SetHeight(42)
             r.itemButton=CreateFrame("Button",nil,r); at(r.itemButton,16,12); r.itemButton:SetSize(width-130,44); r.itemButton:RegisterForClicks("LeftButtonUp","RightButtonUp")
-            r.source=at(W.Text(r,"",11,self.Colors.muted,500),16,60); r.source:SetHeight(33)
+            r.source=at(W.JournalText(r,"",11,500),16,60); r.source:SetHeight(33)
             r.remove=W.Button(r,"Unsave",80,24); r.map=W.Button(r,"Track",80,27); r.chat=W.Button(r,"Chat",80,24)
             W.Hint(r.remove,"Delete this saved hunt and its notes. To hide a suggestion and keep its notes for restoration, use Remove in the Journal.")
             r.checks={}
             for j=1,3 do
                 local check=at(W.Toggle(r,"",function(v) if r.pin then r.pin.checks[j]=v; XC:RenderGuide() end end),13,98+(j-1)*27)
-                check.label=W.Text(check,"",12,self.Colors.text,500); check.label:SetPoint("LEFT",check,"RIGHT",2,0); r.checks[j]=check
+                check.label=W.JournalText(check,"",12,500); check.label:SetPoint("LEFT",check,"RIGHT",2,0); r.checks[j]=check
             end
-            r.notesLabel=at(W.Text(r,"NOTES / saved as you type",10,self.Colors.muted),16,181)
-            r.noteInput=at(W.Input(r,width-32,26),16,196)
+            r.notesLabel=at(W.JournalText(r,"NOTES / saved as you type",10),16,181)
+            r.noteInput=at(W.PaperInput(r,width-32,26),16,196)
         end
         if r.pin~=pin then r.noteInput.edit:ClearFocus() end
         at(r,0,rowY); r:SetWidth(width); r:Show(); r.pin=pin
-        r.name:SetWidth(width-130); r.source:SetWidth(width-130); r.itemButton:SetWidth(width-130)
-        for _,check in ipairs(r.checks) do check.label:SetWidth(width-145) end
+        local actionWidth=0
+        for _,button in ipairs({r.remove,r.map,r.chat}) do W.FitButton(button,80); actionWidth=math.max(actionWidth,button:GetWidth()) end
+        local actionX=width-16-actionWidth; local actionY=15
+        for _,button in ipairs({r.remove,r.map,r.chat}) do at(button,actionX,actionY); actionY=actionY+button:GetHeight()+8 end
+        r.name:SetWidth(actionX-32); r.source:SetWidth(actionX-32); r.itemButton:SetWidth(actionX-32)
+        for _,check in ipairs(r.checks) do check.label:SetWidth(actionX-51) end
         r.noteInput:SetWidth(width-32)
-        at(r.remove,width-96,15); at(r.map,width-96,56); at(r.chat,width-96,95)
-        r.name:SetText((pin.acquired and "|cff62d3acOBTAINED|r  " or "")..pin.item.name); r.source:SetText(self:SourceText(pin.source))
+        r.name:SetText((pin.acquired and "|cff285637OBTAINED|r  " or "")..pin.item.name); r.source:SetText(self:SourceText(pin.source))
         local tasks={"Confirm requirements and availability","Prepare access, materials or a group","Obtain the item"}
         if pin.source.kind=="quest" then tasks[1]="Find the quest and check prerequisites"; tasks[2]="Complete the quest objectives" end
         if pin.source.kind=="craft" then tasks[1]="Find a crafter or learn the recipe"; tasks[2]="Collect the required materials" end
@@ -314,8 +323,11 @@ function XC:RenderHunts()
             check.label:SetHeight(0); local h=math.max(25,check.label:GetStringHeight()+4); check.label:SetHeight(h)
             at(check,13,checkY); checkY=checkY+h+3
         end
-        at(r.notesLabel,16,checkY+3); at(r.noteInput,16,checkY+27)
-        r:SetHeight(checkY+59); rowY=rowY+r:GetHeight()+12
+        r.notesLabel:SetWidth(width-32); r.notesLabel:SetHeight(0)
+        local notesHeight=r.notesLabel:GetStringHeight(); r.notesLabel:SetHeight(notesHeight)
+        local noteY=checkY+3+notesHeight+8
+        at(r.notesLabel,16,checkY+3); at(r.noteInput,16,noteY)
+        r:SetHeight(math.max(noteY+r.noteInput:GetHeight()+12,actionY+4)); rowY=rowY+r:GetHeight()+12
     end
     f.child:SetHeight(math.max(f:GetHeight()-160,rowY))
 end
@@ -324,31 +336,34 @@ function XC:MapTarget(source)
 end
 function XC:BuildAbout()
     local f=W.Page(self.window,"help"); self.about=f
+    W.ThemedPage(f)
     local scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate"); scroll:SetPoint("TOPLEFT",20,-12); scroll:SetPoint("BOTTOMRIGHT",-32,12)
     local body=CreateFrame("Frame",nil,scroll); body:SetSize(720,1120); scroll:SetScrollChild(body)
     local sections={
-        {"GEAR JOURNAL","Choose your spec, then select an item under an equipment heading. Its parchment keeps the source, reward, Track, map, Remove and Chat together. Completed records observed ownership; Removed restores hidden suggestions while keeping notes. Search covers all slots. Compare retains detailed single-slot paths."},
+        {"GEAR JOURNAL","Choose your spec, then select an item under an equipment heading. Equipment narrows the list to one slot or shows all slots. Its parchment keeps the source, reward, equipped comparison, Track, map, Remove and Chat together. Completed records observed ownership; Removed restores hidden suggestions while keeping notes. Search covers the current equipment filter."},
         {"QUEST & CRAFT / DUNGEONS / FUTURE GEAR","Reliable shows quest rewards and crafts with a defined outcome. Dungeon shows eligible group sources. Long-term includes future gear up to level 60. These are scored suggestions, not verified BiS rankings."},
         {"TRACK + MAP / TRACK + GUIDE","Choose an item from the list, then click its name or Track button to save it and start guidance immediately. Known destinations appear on the world map. Dungeon pins show outdoor entrances or approaches, not interior boss routes. Unknown coordinates remain clearly labeled."},
         {"CHAT / ITEM SHORTCUTS","Chat, Shift-click or right-click inserts an item link into your chat draft. You choose the channel and press Enter to send. Ctrl-click previews it in the dressing room. Uncached links may need a second click after data loads."},
         {"SAVED HUNTS / ACTIVE TRACKER","Hunts keep your checklist and notes between sessions. Track resumes a hunt. The separate tracker shows the next step while the planner is closed. Preparation checkboxes are manual; bag ownership is detected automatically. Stop tracking keeps the saved hunt."},
         {"CUSTOM ITEM / SET LOCATION","Use Custom item for gear absent from the catalog. Set location on the tracker fills in the existing item and source; you only enter a map ID and X/Y percentages. Personal locations and targets save for this character."},
         {"APPEARANCE","The Settings page has saved style controls: Classic, Alliance, Horde or Midnight; background opacity; custom background, heading and border colors; two fonts, three text sizes and outlines. Readable scaling keeps text at least 12 screen pixels and window scale at least 80%."},
-        {"WINDOWS / CONTROLS","Journal, Compare, Hunts, Settings, Help and Add item share one window. Drag the title to move it, or the bottom-right grip to scale it. Shift-drag that grip to resize the layout. Settings also has a scale slider. The tracker remains separate. Close the planner with X or Escape. /uc guide reopens an active tracker; /uc resetwindows restores window defaults."},
+        {"WINDOWS / CONTROLS","Journal, Hunts, Settings, Help and Add item share one window. Drag the title to move it, or the bottom-right grip to scale it. Shift-drag that grip to resize the layout. Settings also has a scale slider. The tracker remains separate. Close the planner with X or Escape. /uc guide reopens an active tracker; /uc resetwindows restores window defaults."},
         {"SCORING / DATA","Spec presets add weighted base stats using editable role weights. Specs with the same role can share weights; these are not public-guide BiS rankings. Procs, set bonuses, talent multipliers, stat caps and encounter effects are not simulated. Different weapon hand setups do not receive an upgrade delta. /uc weights edits your profile. Inspect tooltips before committing."},
         {"CATALOG / LOCATION COVERAGE","3,529 items; catalog snapshot "..self.CatalogMeta.date..". Forever overrides and source facts are bundled from Polestar; other entries are marked Classic baseline. New or changed items can be missing. Native quest guidance and optional QuestieDB supply known quest locations; ambiguous chains still require checking. No live AH prices or exact walking routes are supplied."},
     }
     f.helpSections={}
     for _,section in ipairs(sections) do
-        f.helpSections[#f.helpSections+1]={heading=W.Text(body,section[1],12,self.Colors.reliable),text=W.Text(body,section[2],13,self.Colors.text,710)}
+        f.helpSections[#f.helpSections+1]={heading=W.JournalText(body,section[1],12,nil,true),text=W.JournalText(body,section[2],13,710)}
     end
     f.Layout=function(_,width)
         body:SetWidth(width-72); local y=0
         for _,section in ipairs(f.helpSections) do
-            at(section.heading,0,y); at(section.text,0,y+25); section.text:SetWidth(width-80)
+            section.heading:SetWidth(width-80); section.heading:SetHeight(0)
+            local headingHeight=section.heading:GetStringHeight(); section.heading:SetHeight(headingHeight)
+            at(section.heading,0,y); at(section.text,0,y+headingHeight+8); section.text:SetWidth(width-80)
             section.text:SetHeight(0)
             local textHeight=section.text:GetStringHeight()
-            section.text:SetHeight(textHeight); y=y+textHeight+53
+            section.text:SetHeight(textHeight); y=y+headingHeight+textHeight+28
         end
         body:SetHeight(y)
     end

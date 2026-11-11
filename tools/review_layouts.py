@@ -8,6 +8,7 @@ views += [(f'layout-{v}.json',f'research/{v}.png') for v in ['readable-small','r
 views += [(f'layout-{v}-spec-min.json',f'research/{v}-spec-minimum.png') for v in ['hunter','warlock']]
 views += [('layout-journal.json','UpgradeCrossroads/PREVIEW.png')]
 views += [(f'layout-journal-{v}.json',f'research/journal-{v}.png') for v in ['min-large','filtered','removed']]
+views += [(f'layout-themed-{v}.json',f'research/themed-{v}.png') for v in ['hunts','help','editor']]
 reports=[]
 for fixture,output in views:
     subprocess.run([sys.executable,str(ROOT/'tools/render_preview.py'),'--strict','--layout','research/'+fixture,'--output',output],cwd=ROOT,check=True,stdout=subprocess.DEVNULL)

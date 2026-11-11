@@ -43,7 +43,7 @@ end
 function W.ApplyTheme()
     local a=appearance()
     for _,panel in ipairs(W.panels) do
-        panel.object:SetBackdropColor(panel.color[1],panel.color[2],panel.color[3],panel.button and 1 or a.opacity)
+        panel.object:SetBackdropColor(panel.color[1],panel.color[2],panel.color[3],panel.button and 1 or math.max(panel.object.minimumOpacity or 0,a.opacity))
         panel.object:SetBackdropBorderColor(unpack(XC.Colors.border))
     end
     for _,record in ipairs(W.fonts) do if record.color then record.object:SetTextColor(unpack(record.color)) end; W.Font(record) end
@@ -123,6 +123,44 @@ function W.QuestSurface(parent,kind,shared)
     end
     f:ApplySurfaceTheme(appearance()); W.questSurfaces[#W.questSurfaces+1]=f
     return f
+end
+
+-- Border-only cards sit over the page's shared painting. Keeping their
+-- interiors transparent avoids restarting the landscape for every row.
+function W.PaperPanel(parent,width,height)
+    local f=CreateFrame("Frame",nil,parent,"BackdropTemplate")
+    if width then f:SetSize(width,height) end
+    f:SetBackdrop({edgeFile="Interface\\DialogFrame\\UI-DialogBox-Border",edgeSize=16,insets={left=6,right=6,top=6,bottom=6}})
+    f.surfaceKind="parchment"; f.sharedPanorama=true
+    function f:ApplySurfaceTheme()
+        self:SetBackdropColor(0,0,0,0)
+        self:SetBackdropBorderColor(.32,.23,.12,1)
+    end
+    f:ApplySurfaceTheme(); W.questSurfaces[#W.questSurfaces+1]=f
+    return f
+end
+
+-- The content pages use the same illustrated paper as the Journal. Their
+-- artwork lives on the page's own background layer, below direct labels and
+-- controls as well as scroll children. Settings deliberately does not use it.
+function W.ThemedPage(page)
+    if page.themeSkin then return page.themeSkin end
+    local skin={}; page.themeSkin=skin
+    skin.panorama=W.JournalPanorama(page)
+    skin.wash=page:CreateTexture(nil,"BACKGROUND",nil,1)
+    skin.wash:SetColorTexture(.90,.72,.43,.68); skin.wash.styleRole="themedPagePaperWash"
+    skin.border=W.PaperPanel(page,page:GetWidth(),page:GetHeight())
+    skin.border:SetAllPoints(page)
+    function skin:Layout()
+        local width,height=page:GetWidth(),page:GetHeight()
+        for _,texture in ipairs({self.panorama,self.wash}) do
+            W.Place(texture,6,6); texture:SetSize(math.max(1,width-12),math.max(1,height-12))
+        end
+        self.border:SetSize(width,height)
+    end
+    page:HookScript("OnSizeChanged",function() skin:Layout() end)
+    skin:Layout()
+    return skin
 end
 
 -- An ornamental skin on the existing shell, not another window. Every element
@@ -206,6 +244,17 @@ function W.JournalText(parent,text,size,width,heading)
     f:SetText(text or "")
     return f
 end
+function W.Paperize(object,heading)
+    for _,record in ipairs(W.fonts) do
+        if record.object==object then
+            if heading~=nil then record.heading=heading end
+            record.paper=true; record.color=record.heading and journalHeadingInk or journalInk
+            object:SetTextColor(unpack(record.color)); W.Font(record)
+            return object
+        end
+    end
+    return object
+end
 function W.JournalRow(parent,text,width,height,handler)
     local b=CreateFrame("Button",nil,parent); b:SetSize(width,height or 27)
     b.isRow=true; b.isJournalRow=true
@@ -284,12 +333,20 @@ function W.Input(parent,width,height,multiline)
     local panel=W.Panel(parent,width,height,XC.Colors.bg)
     local edit=CreateFrame("EditBox",nil,panel)
     edit:SetPoint("TOPLEFT",8,-2); edit:SetPoint("BOTTOMRIGHT",-8,2)
+    edit.inputPanel=panel; edit.inputBaseHeight=height
     edit:SetAutoFocus(false); W.RegisterFont(edit,panel,12,XC.Colors.text)
     edit:SetMultiLine(multiline and true or false)
     edit:SetMaxLetters(multiline and 500 or 180)
     edit:SetScript("OnEscapePressed",function(self) self:ClearFocus() end)
-    edit.inputPanel=panel; edit.inputBaseHeight=height
     panel.edit=edit
+    return panel
+end
+function W.PaperInput(parent,width,height,multiline)
+    local panel=W.Input(parent,width,height,multiline)
+    local well={.075,.055,.035,1}
+    panel.minimumOpacity=.92
+    for _,record in ipairs(W.panels) do if record.object==panel then record.color=well; break end end
+    panel:SetBackdropColor(well[1],well[2],well[3],math.max(.92,appearance().opacity))
     return panel
 end
 function W.Tooltip(frame,item,shortcut)

@@ -1,16 +1,16 @@
-UPGRADE CROSSROADS 0.6.5 - START HERE
+UPGRADE CROSSROADS 0.7.0 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.6.5-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.7.0-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.6.5.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.7.0.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
-Journal, Compare, Hunts, Settings, Help and Add item share one window. Switching
+Journal, Hunts, Settings, Help and Add item share one window. Switching
 pages hides the previous page, so settings cannot sit behind the gear list.
 The pages share position, size, scale and one native close button. The small
 in-game tracker stays separate and hides while the main window is open.
@@ -29,6 +29,8 @@ CLEANER CONTROLS
   old dialog texture. Default opacity is 100%; reduce it in Settings if desired.
 - The tiny A-/A+ and text-based close/resize controls are gone. X uses the native
   close template, and the lower-right corner uses a resize-grip texture.
+- Journal, Hunts, Help and Add item share the darker panorama, aged parchment
+  and native frame style. Settings keeps its simpler controls without scenery.
 
 FACTION FILTER
 In Journal, open Filters and cycle Alliance, Horde and Both. The first selection
@@ -59,11 +61,16 @@ USING IT
 The Journal opens first. Select any ranked item under an equipment heading to
 read its parchment description, source and reward. Track, Show on map, Remove
 and Chat stay with that item. Click its reward for immediate tracking. Source
-cycles alternate eligible sources. Search covers items and sources in all slots.
+cycles alternate eligible sources. Search covers items and sources in the
+selected equipment filter.
 Active lists suggestions, Completed records observed ownership, and Removed
 retains hidden suggestions for restoration without deleting their saved notes.
 Click a slot heading to collapse it; the bottom control sets picks per slot.
-Compare keeps the old detailed single-slot view and its three acquisition paths.
+Choose All there to browse every matching result without a ten-item cap.
+Use Equipment to select one slot or return to all equipment. The detail pane
+includes the equipped item's name, stats and score beside the candidate's model
+comparison, with Chat for the equipped item. Filters retain the acquisition
+paths. There is no separate Compare tab.
 
 Chat, Shift-click or right-click inserts an unsent item link into a chat draft.
 You choose the channel and send it. Ctrl-click previews gear. If a link is not
@@ -91,9 +98,12 @@ Restore appearance resets look preferences only. /uc resetwindows resets geometr
 FIRST LIVE CHECK
 1. Confirm your detected class and cycle its spec choices. Verify only your
    class appears; try different roles if your class supports them.
-2. Switch all six pages. Only one should appear, with no gear visible behind it.
+2. Switch all five pages. Only one should appear, with no gear visible behind it.
+   Journal, Hunts, Help and Add item should share the illustrated style; Settings
+   should keep its plain controls.
 3. Try the main window and tracker at your normal UI scale and Largest text.
-4. Try source selection, Track/map, Chat, hunt notes and editor Cancel. On a
+4. Try Equipment/all slots, the equipped comparison and its Chat action, source
+   selection, Track/map, hunt notes and editor Cancel. On a
    Hunter, confirm thrown weapons are absent from ranged recommendations.
 5. Change settings, close/reopen the window and /reload. Check everything saves.
 
@@ -101,7 +111,8 @@ Automated Lua checks, circular RGBA assets and offline layouts are included.
 The attached screenshots exposed issues the old offline skin could not predict;
 actual client font/template rendering still needs an in-game pass for this build.
 PREVIEW.png and GUIDE_PREVIEW.png are labeled offline illustrations, not live QA.
-Catalog remains the 2026-10-13 snapshot. This revision changes the default font.
+Catalog remains the 2026-10-13 snapshot. This revision consolidates gear browsing
+and shares the journal theme across the content pages.
 
 The full source archive includes tests, tools, logo masters and the maintenance
 guide. Runtime needs no Python. Do not copy development files into AddOns.

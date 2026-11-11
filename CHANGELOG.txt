@@ -1,3 +1,15 @@
+v0.7.0
+- Added All / slot so the consolidated Journal can browse every matching item.
+- Consolidated gear browsing in Journal. Equipment selects one slot or all slots;
+  equipped item details, model score and equipped-item Chat join the candidate
+  comparison. The separate Compare navigation tab is removed.
+- Kept acquisition paths, faction/source filters, search, ranking, source cycling,
+  Track/map, item chat, saved hunts, checklists and notes in the shared workflow.
+- Applied the darker panorama, aged parchment and native frame/font style to
+  Hunts, Help and Add item. Settings retains its simpler controls without scenery.
+- Kept the existing artwork and October 13 catalog. No release tag, CurseForge
+  upload or live-client validation is part of this prepared update.
+
 v0.6.5
 - Made WoW's standard font the default for addon text, controls and the tracker.
   The client supplies its font; no font file is bundled. Plain remains optional.
