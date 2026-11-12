@@ -39,6 +39,13 @@ local function flow(text,x,y,width)
     local h=text:GetStringHeight(); text:SetHeight(h)
     return y+h
 end
+local function recipeSourceIndex(row)
+    if not row then return nil end
+    if row.source.kind=="craft" then return row.sourceIndex end
+    for i,source in ipairs(row.sources) do
+        if source.kind=="craft" then return i end
+    end
+end
 function XC:LayoutNavigation()
     local f=self.window; local x=22
     local journal=f.activePage=="gear"
@@ -151,9 +158,23 @@ function XC:BuildGear()
         XC:SetJournalSource(row,row.sourceIndex%row.sourceCount+1)
         XC:RenderJournal()
     end)
+    p.recipe=W.Button(p.paper,"Recipe",84,28,function()
+        local row=p.selectedRow
+        local index=recipeSourceIndex(row)
+        if not index then return end
+        if row.sourceIndex~=index and XC:SetJournalSource(row,index) then XC:RenderJournal() end
+        local offset=p.recipeOffset
+        local scroll=p.detailScroll
+        if not offset then return end
+        if scroll.UpdateScrollChildRect then scroll:UpdateScrollChildRect() end
+        if scroll.GetVerticalScrollRange then offset=math.min(offset,scroll:GetVerticalScrollRange()) end
+        scroll:SetVerticalScroll(offset)
+    end)
+    p.recipe:Hide()
+    W.Hint(p.recipe,"Jump to this item's recipe and how to learn it.")
     p.track=W.Button(p.paper,"Track",88,31,function() local row=p.selectedRow; if row then XC:TrackItem(row,row.lane,false) end end)
     p.map=W.Button(p.paper,"Show on map",134,31,function() local row=p.selectedRow; if row then XC:MapTarget(row.source) end end)
-    W.Hint(p.map,"Show the selected item's known quest source or outdoor entrance on the map.")
+    W.Hint(p.map,"Show the selected item's known source, recipe location or outdoor entrance on the map.")
     p.remove=W.Button(p.paper,"Remove",94,31,function()
         local row=p.selectedRow; if not row then return end
         if prefs().state=="removed" then XC:RestoreJournalEntry(row) else XC:RemoveJournalEntry(row) end
@@ -216,8 +237,9 @@ function XC:BuildGear()
             if wrap then at(b,14+((i-1)%2)*(right-28)/2,topY+math.floor((i-1)/2)*(actionHeight+6))
             else at(b,x,topY); x=x+b:GetWidth()+5 end
         end
-        W.FitButton(p.sourceChoice,230); p.sourceChoice:SetWidth(right-28)
-        local sourceY=topY-p.sourceChoice:GetHeight()-8; at(p.sourceChoice,14,sourceY)
+        W.FitButton(p.sourceChoice,230); W.FitButton(p.recipe,84)
+        local sourceY=topY-math.max(p.sourceChoice:GetHeight(),p.recipe:GetHeight())-8
+        at(p.sourceChoice,14,sourceY); at(p.recipe,right-14-p.recipe:GetWidth(),sourceY)
         p.detailScroll:SetPoint("BOTTOMRIGHT",-32,ph-sourceY+12)
         at(p.status,10,height-statusHeight-12)
         if XC.context then XC:RenderJournal() end
@@ -230,6 +252,10 @@ function XC:RenderJournalDetail(row)
     if p.detailKey~=detailKey and p.detailScroll.SetVerticalScroll then p.detailScroll:SetVerticalScroll(0) end
     p.detailKey=detailKey
     p.selectedRow=row
+    local hasRecipe=recipeSourceIndex(row)~=nil
+    p.recipe:SetShown(hasRecipe)
+    p.sourceChoice:SetWidth(p.paper:GetWidth()-28-(hasRecipe and p.recipe:GetWidth()+6 or 0))
+    p.recipeOffset=nil
     for _,b in ipairs({p.track,p.map,p.remove,p.chat,p.sourceChoice}) do b:SetEnabled(row~=nil) end
     p.equippedItem=nil; p.equippedChat:SetEnabled(false)
     for _,el in ipairs({p.equippedName,p.equippedStats,p.equippedScore,p.equippedChat}) do el:SetShown(comparisonSlot~=nil) end
@@ -269,8 +295,9 @@ function XC:RenderJournalDetail(row)
         local color=ITEM_QUALITY_COLORS and ITEM_QUALITY_COLORS[quality]
         p.rewardName:SetTextColor(color and color.r or 1,color and color.g or 1,color and color.b or 1)
         p.rewardIcon:SetTexture(icon)
-        local descriptions={quest="Earn this item as a quest reward. Check its quest chain before travelling.",craft="Obtain this crafted item from its recipe or a crafter. Check materials and recipe access.",vendor="Buy this item from its vendor. Check price and any access requirements.",dungeon="Find this item in group content. A drop is not guaranteed.",raid="Plan a raid for this item. Check access and loot rules with your group.",world="This is a world-drop target. It has no guaranteed farming location.",reputation="Check the required reputation and the reward vendor.",auction="This is a personal auction target. Crossroads does not scan live prices."}
+        local descriptions={quest="Earn this item as a quest reward. Check its quest chain before travelling.",craft="Learn the recipe, gather its materials and craft this item. Check whether it can be traded if you plan to ask another player to make it.",vendor="Buy this item from its vendor. Check price and any access requirements.",dungeon="Find this item in group content. A drop is not guaranteed.",raid="Plan a raid for this item. Check access and loot rules with your group.",world="This is a world-drop target. It has no guaranteed farming location.",reputation="Check the required reputation and the reward vendor.",auction="This is a personal auction target. Crossroads does not scan live prices."}
         p.description:SetText(descriptions[row.source.kind] or "Inspect this source and confirm its requirements before travelling.")
+        p.sourceHeading:SetText(row.source.kind=="craft" and "RECIPE" or "SOURCE")
         p.source:SetText(self:SourceText(row.source))
         local nav=self.Navigation.Resolve(row.source)
         if nav.point then
@@ -294,6 +321,7 @@ function XC:RenderJournalDetail(row)
     if row then y=flow(p.comparison,0,y,width)+18 end
     y=flow(p.descriptionHeading,0,y,width)+6; y=flow(p.description,0,y,width)+20
     if row then
+        if row.source.kind=="craft" then p.recipeOffset=math.max(0,y-8) end
         y=flow(p.sourceHeading,0,y,width)+6; y=flow(p.source,0,y,width)+12; y=flow(p.location,0,y,width)+20
         y=flow(p.rewardHeading,0,y,width)+8
         at(p.reward,0,y); p.reward:SetWidth(width)
@@ -321,7 +349,7 @@ function XC:RenderJournal()
     p.lane.label:SetText(laneLabels[v.lane].."  >")
     local slotLabel=v.slotID~=0 and self:GetSlot(v.slotID).label or "All equipment"
     p.slotButton.label:SetText(slotLabel..(p.slotPickerOpen and "  <" or "  >"))
-    W.Hint(p.search,"Search item, boss, quest or zone names in "..(v.slotID~=0 and slotLabel:lower() or "all equipment")..".")
+    W.Hint(p.search,"Search item, boss, quest, recipe source or zone names in "..(v.slotID~=0 and slotLabel:lower() or "all equipment")..".")
     p.faction.label:SetText(self.Rules.FactionLabels[self.Rules.FactionMode(self.db.options,self.context)].."  >")
     p.solo:SetChecked(self.db.options.solo); p.craft:SetChecked(self.db.options.crafted); p.auction:SetChecked(self.db.options.auction)
     for id,b in pairs(p.tabs) do W.SelectRow(b,id==v.state) end

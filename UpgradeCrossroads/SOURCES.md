@@ -143,6 +143,59 @@ stat sticks as if they were the Hunter's shot weapon.
 These changes do not refresh Catalog.lua: its underlying snapshot remains
 2026-10-13 with the Forever/Classic coverage limitations recorded above.
 
+# Crafting recipe acquisition
+
+`research/recipe_sources.json` is a separate, reviewed snapshot, keyed by the
+catalog's crafting spell IDs. It contains source facts and original summaries.
+`tools/build_catalog.py` validates the entries, then generates
+`Data/RecipeSources.lua` for spells in the current equipment catalog. The
+build reports the counts of retained and unmatched recipes so that a refresh can
+be reviewed before release. The game reads the generated table offline.
+
+- Efficient Games EG Link, CC BY 4.0:
+  https://github.com/JIVESCORP/eg-link-output-wowf/tree/3067c6919046428152f2152fa551f44a8c215d79
+  Trainer, vendor, quest-reward and loot observations from live Forever
+  builds 1.60.1.70790, 1.60.1.70862 and 1.60.1.70888. The most recent
+  observation of each source was preferred. Named loot observations identify
+  possible drops without implying a chance, guarantee, or exclusive source.
+  Coordinates are reported player approach positions, limited to named
+  vendors and trainers in their faction's capitals and starter towns.
+  Conflicting observed trainer ranks are omitted.
+- LibProfessionDB v1.9.1, MIT:
+  https://www.curseforge.com/wow/addons/libprofessiondb/files/9095167
+  Forever client build 1.60.1.69977 teaching-item IDs and automatic acquisition
+  flags. The archive's SHA-256 is
+  `909cb41720cf6bf6920f1c25c644f89b39ad63087f589c07737e7da943c52379`.
+  When recent Forever sources are missing, the explicitly borrowed Vanilla
+  sources in this release are shown as Classic baseline leads without map pins.
+  Borrowed skill thresholds are excluded.
+- WCLBox Forever profession pages for Blacksmithing, Enchanting, Engineering,
+  Leatherworking and Tailoring:
+  https://wowforever.wclbox.com/en/zhuanye/tailoring
+  Build 1.60.1.70888 teaching-item facts. Rows are matched to a unique
+  output item and omitted if the known teaching item disagrees. A teaching
+  item can be confirmed even when its trainer, vendor, drop, or quest is unknown.
+- WoW-Professions and ForeverDB vendor references:
+  https://www.wow-professions.com/forever/npc/mivin-shadowweave
+  https://www.wow-professions.com/forever/npc/jimbek
+  https://www.foreverdb.app/en/forever/items/253890/pattern-pristine-boots
+  Matched 65 Merchant's Favor recipes to the same stock, skill and cost
+  at both faction vendors. Used the published Forever map IDs and vendor
+  positions. Faction-specific reputation is noted where required.
+- Individual recipe references:
+  https://www.wowhead.com/forever/quest=6032/sacred-cloth
+  https://www.wowhead.com/forever/spell=13240/the-mortar-reloaded
+  Sacred Cloth teaches Mooncloth Boots. The Mortar: Reloaded refills a
+  Goblin Mortar and cannot be used to obtain a new one.
+
+Of 1,321 catalogued crafting spells, 410 have Forever guidance beyond the
+identity of a teaching item, 496 have a labeled Classic baseline lead, and
+415 name a teaching item with the acquisition source unverified. There are
+202 recipes with at least one faction-filtered map pin. Recipe notes identify
+where to learn a recipe. Crafting stations, ingredients, and recipe ownership
+are not inferred. When refreshing the snapshot, review the new facts in the
+JSON, preserve the evidence field, and rebuild the generated Lua.
+
 ## Quest journal design reference (0.6.0)
 
 The requested reference was GearQuest Forever's public quest-log workflow and

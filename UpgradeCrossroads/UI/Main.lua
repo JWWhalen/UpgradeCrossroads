@@ -301,7 +301,7 @@ function XC:RenderHunts()
         r.name:SetText((pin.acquired and "|cff285637OBTAINED|r  " or "")..pin.item.name); r.source:SetText(self:SourceText(pin.source))
         local tasks={"Confirm requirements and availability","Prepare access, materials or a group","Obtain the item"}
         if pin.source.kind=="quest" then tasks[1]="Find the quest and check prerequisites"; tasks[2]="Complete the quest objectives" end
-        if pin.source.kind=="craft" then tasks[1]="Find a crafter or learn the recipe"; tasks[2]="Collect the required materials" end
+        if pin.source.kind=="craft" then tasks[1]="Check the recipe source"; tasks[2]="Collect the required materials" end
         for j,check in ipairs(r.checks) do check.label:SetText(tasks[j]); check:SetChecked(j==3 and pin.acquired or pin.checks[j]); check:SetEnabled(not (j==3 and pin.acquired)) end
         r.remove:SetScript("OnClick",function()
             XC.db.pins[tostring(pin.item.id)]=nil
@@ -342,7 +342,7 @@ function XC:BuildAbout()
     local sections={
         {"GEAR JOURNAL","Choose your spec, then select an item under an equipment heading. Equipment narrows the list to one slot or shows all slots. Its parchment keeps the source, reward, equipped comparison, Track, map, Remove and Chat together. Completed records observed ownership; Removed restores hidden suggestions while keeping notes. Search covers the current equipment filter."},
         {"QUEST & CRAFT / DUNGEONS / FUTURE GEAR","Reliable shows quest rewards and crafts with a defined outcome. Dungeon shows eligible group sources. Long-term includes future gear up to level 60. These are scored suggestions, not verified BiS rankings."},
-        {"TRACK + MAP / TRACK + GUIDE","Choose an item from the list, then click its name or Track button to save it and start guidance immediately. Known destinations appear on the world map. Dungeon pins show outdoor entrances or approaches, not interior boss routes. Unknown coordinates remain clearly labeled."},
+        {"TRACK + MAP / TRACK + GUIDE","Choose an item from the list, then click its name or Track button to save it and start guidance. For crafted gear, the Recipe section explains how to learn it. Known recipe locations and outdoor dungeon approaches can be shown on the map."},
         {"CHAT / ITEM SHORTCUTS","Chat, Shift-click or right-click inserts an item link into your chat draft. You choose the channel and press Enter to send. Ctrl-click previews it in the dressing room. Uncached links may need a second click after data loads."},
         {"SAVED HUNTS / ACTIVE TRACKER","Hunts keep your checklist and notes between sessions. Track resumes a hunt. The separate tracker shows the next step while the planner is closed. Preparation checkboxes are manual; bag ownership is detected automatically. Stop tracking keeps the saved hunt."},
         {"CUSTOM ITEM / SET LOCATION","Use Custom item for gear absent from the catalog. Set location on the tracker fills in the existing item and source; you only enter a map ID and X/Y percentages. Personal locations and targets save for this character."},

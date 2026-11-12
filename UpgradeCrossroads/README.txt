@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.7.0
+UPGRADE CROSSROADS 0.7.2
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -28,7 +28,7 @@ your bags/equipment or acquired saved hunts; it is not a full historic collectio
 Removed hides an item until you restore it, preserving its hunt notes/checklists.
 Use Filters for source paths, Solo, Crafts, AH and Alliance/Horde/Both. Available
 now uses your current level; Future goals includes later levels. The left search
-matches item, boss, quest and zone names across the selected equipment filter.
+matches item, boss, quest, recipe source and zone names across the equipment filter.
 Choose 1/3/5/10 or All picks per slot; All keeps every matching item reachable.
 These ranks use model weights, not verified BiS or a simulation.
 
@@ -100,6 +100,16 @@ space. Readable mode keeps whole-pixel text sizes and the 80-150% scale range;
 disabling it permits 50-150%. /uc resetwindows resets shell/tracker geometry.
 Hunts and appearance choices remain saved. Closing the tracker keeps its hunt;
 /uc guide reopens it. Stop tracking releases the waypoint but retains notes.
+
+CRAFTED GEAR
+Select a crafted item in Journal and click Recipe beside Source. It jumps to
+the recipe section, selecting a crafting source when needed. It shows how to
+learn the recipe when that information is available, including the trainer,
+pattern vendor, drop or other acquisition method. Learning skill is shown when
+known. The tracker and saved hunts use the same recipe instructions.
+Show on map can pin a confirmed recipe location available to your faction.
+It points to the source of the recipe. Crafting materials and workstations are
+separate requirements.
 
 MAP GUIDANCE
 The map action uses active quest guidance, known provider locations, or an
@@ -188,7 +198,7 @@ snapshot until a maintained data release replaces it.
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This v0.7.0 update has
+ownership changes, UI construction and command/event flows. This v0.7.2 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

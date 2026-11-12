@@ -257,8 +257,41 @@ test('missing crafting location keeps guide without a fabricated waypoint', '''
 local source={kind="craft",name="Tailoring",spellID=900080,skill=75}
 XC:TrackItem({item={id=900080,name="Craft target",sources={source}},source=source},"reliable",true)
 assert(XC.guide:IsShown() and XC.guide.step.text:find("recipe"))
+assert(XC:SourceText(source):lower():find("recipe source unverified",1,true))
 assert(LastWaypoint==nil)
 assert(XC.guide.map.label.text=="Retry location")
+''')
+test('recipe pins respect the actual faction and personal map overrides', '''
+local recipeID=900081
+local source={kind="craft",name="Tailoring",spellID=recipeID,skill=60}
+local key=XC.Navigation.SourceKey(source)
+local options=XC.db.options
+local priorFaction,priorFilter,priorLocation=MockFaction,options.faction,XC.db.locations[key]
+XC.RecipeSources[recipeID]={kind="vendor",text="Buy the pattern from a recipe vendor.",basis="Forever",
+    locations={
+        {mapID=1420,x=43,y=55,label="Horde recipe vendor",side=2},
+        {mapID=1429,x=41,y=67,label="Alliance recipe vendor",side=1},
+    }}
+MockFaction="Alliance"; options.faction="both"; XC:Refresh()
+assert(key=="craft:900081")
+local result=XC.Navigation.Resolve(source)
+assert(result.point and result.point.mapID==1429 and result.point.label=="Alliance recipe vendor")
+MockFaction="Horde"; XC:Refresh()
+result=XC.Navigation.Resolve(source)
+assert(result.point and result.point.mapID==1420 and result.point.label=="Horde recipe vendor")
+XC.db.locations[key]={mapID=1436,x=10,y=20,label="My recipe location"}
+result=XC.Navigation.Resolve(source)
+assert(result.point and result.point.mapID==1436 and result.point.basis=="Personal source location")
+XC.db.locations[key]=nil
+XC.RecipeSources[recipeID].locations={{mapID=1429,x=41,y=67,label="Alliance recipe vendor",side=1}}
+assert(not XC.Navigation.Resolve(source).point)
+XC.RecipeSources[recipeID].locations[1].side=3
+assert(XC.Navigation.Resolve(source).point.mapID==1429)
+XC.RecipeSources[recipeID].basis="Classic baseline"
+assert(not XC.Navigation.Resolve(source).point)
+assert(XC:SourceText(source):find("Classic",1,true))
+XC.RecipeSources[recipeID]=nil; XC.db.locations[key]=priorLocation
+MockFaction=priorFaction; options.faction=priorFilter; XC:Refresh()
 ''')
 test('an unrelated user waypoint is preserved when a hunt cannot be mapped', '''
 XC.Navigation.lastPoint={mapID=1436,x=42.5,y=71.7}
@@ -884,6 +917,88 @@ local before=#Frames; p.rows[5].scripts.OnClick(p.rows[5],"LeftButton")
 assert(p.selectedRow.item.id==991103 and p.title.text=="Journal Pendant")
 assert(XC.db.activeHunt==nil and not next(XC.db.pins) and #Frames==before)
 assert(p.track:GetParent()==p.paper and p.map:GetParent()==p.paper)
+''')
+test('journal and existing hunts show how to get a crafted gear recipe', '''
+local p=XC.window.journal
+local item=JournalUICatalog[991102]
+local source=item.sources[1]
+local priorSpellID=source.spellID
+local priorSelection=XC.db.journalUI.selected
+local priorHunt=XC.db.activeHunt
+local priorWaypoint,priorMap,priorRecipePoint=LastWaypoint,MapOpened,XC.Navigation.lastPoint
+local recipeID=991202
+local instruction="Buy Pattern: Journal Crown from the Training Quartermaster in Westfall."
+source.spellID=recipeID
+XC.RecipeSources[recipeID]={kind="vendor",text=instruction,skill=35,recipeItemID=991302,basis="Forever",
+    locations={{mapID=1436,x=32,y=42,label="Training Quartermaster",side=1}}}
+p.search.edit:SetText("Training Quartermaster"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(#p.entries==1 and p.selectedRow.item.id==item.id)
+assert(p.source.text:find(instruction,1,true))
+assert(p.source.text:find("35",1,true) and not p.source.text:find("100",1,true))
+assert(p.location.text:find("Training Quartermaster",1,true))
+assert(p.recipe:IsShown() and p.recipe:GetParent()==p.paper)
+p.recipe.scripts.OnClick()
+assert(p.recipeOffset>0 and p.detailScroll:GetVerticalScroll()==p.recipeOffset)
+assert(LastWaypoint==priorWaypoint and MapOpened==priorMap and not XC.db.activeHunt)
+p.map.scripts.OnClick()
+assert(MapOpened==1436 and LastWaypoint.id==1436 and LastWaypoint.x==.32)
+assert(not XC.db.activeHunt and not next(XC.db.pins))
+
+-- Old hunts saved only the profession and spell ID. They must pick up recipe
+-- guidance without losing the player's notes or checklist progress.
+local savedSource={kind="craft",name="Tailoring",spellID=recipeID,skill=100}
+local pin={item=item,source=savedSource,lane="reliable",order=1,checks={[2]=true},notes="Saved recipe notes"}
+local key=tostring(item.id)
+XC.db.pins[key]=pin
+p.track.scripts.OnClick()
+assert(XC.db.activeHunt==key and XC.guide:IsShown())
+assert(XC.guide.source.text:find(instruction,1,true))
+assert(XC.db.pins[key]==pin and pin.notes=="Saved recipe notes" and pin.checks[2])
+XC:ShowHunts()
+assert(XC.huntWindow.rows[1].source.text:find(instruction,1,true))
+
+XC.db.pins[key]=nil; XC.db.activeHunt=priorHunt
+XC.RecipeSources[recipeID]=nil; source.spellID=priorSpellID
+LastWaypoint,MapOpened,XC.Navigation.lastPoint=priorWaypoint,priorMap,priorRecipePoint
+XC:ShowPage("gear"); p.clear.scripts.OnClick()
+XC.db.journalUI.selected=priorSelection; XC:Refresh()
+''')
+test('recipe button selects an eligible crafting source and fits the fixed footer', '''
+local p=XC.window.journal
+local item=JournalUICatalog[991102]
+local priorSelection=XC.db.journalUI.selected
+local priorSources=XC.journalSourceSelection
+local priorCraft=XC.db.options.crafted
+local width,height=XC.window:GetWidth(),XC.window:GetHeight()
+local boost=XC:Appearance().textBoost
+item.sources[2]={kind="vendor",name="Alternate Crown Vendor",zone="Westfall"}
+XC.journalSourceSelection={[tostring(1)..":"..item.id]=2}
+XC:Refresh()
+p.search.edit:SetText(item.name); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(p.selectedRow.source.kind=="vendor" and p.recipe:IsShown())
+
+XC.window:SetSize(900,720); XC:Appearance().textBoost=2; XC:ApplyAppearance()
+p:ApplyLayout()
+assert(p.sourceChoice.point[2]+p.sourceChoice.width<p.recipe.point[2])
+assert(p.recipe.point[2]+p.recipe.width<=p.paper.width-8)
+assert(p.recipe.label:GetStringWidth()+20<=p.recipe.width+.01)
+assert(-p.recipe.point[3]>p.paper.height-p.detailScroll.points.BOTTOMRIGHT[3])
+p.recipe.scripts.OnClick()
+assert(p.selectedRow.source.kind=="craft" and p.sourceHeading.text=="RECIPE")
+assert(p.detailScroll:GetVerticalScroll()==p.recipeOffset)
+assert(not next(XC.db.pins))
+
+XC.db.options.crafted=false; XC:Refresh()
+assert(p.selectedRow.source.kind=="vendor" and not p.recipe:IsShown())
+assert(p.sourceChoice.width==p.paper.width-28)
+p.search.edit:SetText("No such gear"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(not p.selectedRow and not p.recipe:IsShown() and not p.recipeOffset)
+
+item.sources[2]=nil
+XC.journalSourceSelection=priorSources; XC.db.options.crafted=priorCraft
+XC:Appearance().textBoost=boost; XC.window:SetSize(width,height); XC:ApplyAppearance()
+p.clear.scripts.OnClick()
+XC.db.journalUI.selected=priorSelection; XC:Refresh()
 ''')
 test('journal equipment picker filters slots inline and preserves the saved choice', '''
 local p=XC.window.journal

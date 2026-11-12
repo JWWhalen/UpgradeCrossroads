@@ -149,7 +149,7 @@ function XC:RenderGuide()
     end
     local tasks={"Confirm requirements and availability.","Prepare access, materials or your group.","Obtain "..pin.item.name.."."}
     if pin.source.kind=="quest" then tasks={"Find and accept "..pin.source.name..".","Complete the quest objectives.","Turn in and select your item reward."} end
-    if pin.source.kind=="craft" then tasks={"Find a crafter or learn recipe #"..tostring(pin.source.spellID or "?")..".","Collect the materials for this recipe.","Craft or receive "..pin.item.name.."."} end
+    if pin.source.kind=="craft" then tasks={"Check the recipe source below.","Collect the materials for this recipe.","Craft or receive "..pin.item.name.."."} end
     if pin.source.kind=="dungeon" or pin.source.kind=="raid" then tasks={"Check access and travel to "..(pin.source.zone or "the instance")..".","Form your group and defeat "..pin.source.name..".","Loot the item; repeat eligible runs if needed."} end
     local step=1
     while step<=3 and pin.checks[step] do step=step+1 end
@@ -162,6 +162,7 @@ function XC:RenderGuide()
     else f.step:SetText("STEP "..step.." OF 3 / "..tasks[step]) end
     f.source:SetText(self:SourceText(pin.source))
     local label=result.point and (result.point.basis..(result.point.entrance and " / entrance only" or "")) or result.message
+    if pin.source.kind=="craft" then label=result.message end
     if result.warning then label=result.warning end
     f.status:SetText(label)
     f.next:SetEnabled(not pin.acquired and not otherFaction and step<=3)

@@ -1,12 +1,12 @@
-UPGRADE CROSSROADS 0.7.0 - START HERE
+UPGRADE CROSSROADS 0.7.2 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.7.0-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.7.2-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.7.0.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.7.2.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
@@ -63,6 +63,9 @@ read its parchment description, source and reward. Track, Show on map, Remove
 and Chat stay with that item. Click its reward for immediate tracking. Source
 cycles alternate eligible sources. Search covers items and sources in the
 selected equipment filter.
+For crafted gear, click Recipe beside Source to see how to learn the recipe.
+Show on map uses a confirmed recipe location when available. Hunts
+and the tracker also show the recipe instructions.
 Active lists suggestions, Completed records observed ownership, and Removed
 retains hidden suggestions for restoration without deleting their saved notes.
 Click a slot heading to collapse it; the bottom control sets picks per slot.

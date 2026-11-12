@@ -82,6 +82,20 @@ end
 local function npcPoint(id)
     return pointFromSpawns(entity("Npc",id,"spawns"),entity("Npc",id,"name") or ("NPC #"..id))
 end
+local function recipePoint(recipe)
+    if not recipe or not recipe.locations or recipe.basis~="Forever" then return nil end
+    local faction=UnitFactionGroup("player")
+    local side=faction=="Alliance" and 1 or faction=="Horde" and 2 or 0
+    local here=C_Map and safe(C_Map.GetBestMapForUnit,"player")
+    local fallback
+    for _,location in ipairs(recipe.locations) do
+        if (location.side==3 or location.side==side) and N.ValidPoint(location) then
+            if location.mapID==here then return location end
+            fallback=fallback or location
+        end
+    end
+    return fallback
+end
 local function isDone(id)
     local done=C_QuestLog and safe(C_QuestLog.IsQuestFlaggedCompleted,id)
     if done~=nil then return done end
@@ -147,7 +161,18 @@ function N.Resolve(source)
     local override=XC.db and XC.db.locations and XC.db.locations[result.sourceKey]
     if N.ValidPoint(override) then result.point=copy(override); result.point.basis="Personal source location"; result.status="point"; result.message="Your saved source location."; return result end
     if N.ValidPoint(source) then result.point=copy(source); result.point.basis=source.personal and "Personal source location" or "Bundled source location"; result.status="point"; result.message="Source location ready."; return result end
-    if source.kind=="dungeon" or source.kind=="raid" then
+    if source.kind=="craft" then
+        local location=recipePoint(XC:GetRecipeSource(source))
+        if location then
+            result.point=copy(location)
+            result.point.basis="Bundled recipe location"
+            result.status="point"
+            result.message="Recipe location: "..location.label.."."
+        else
+            result.message="No verified recipe map location for this character."
+        end
+        return result
+    elseif source.kind=="dungeon" or source.kind=="raid" then
         local entry=XC.Entrances and XC.Entrances[source.zoneID]
         if entry then
             local selected=(UnitFactionGroup("player")=="Alliance" and entry.alliance) or entry
@@ -166,7 +191,6 @@ function N.Resolve(source)
         local p=npcPoint(source.npcID)
         if p then result.point=p; result.status="point"; result.message="Reported creature spawn; this does not detect whether it is currently alive."; return result end
     end
-    if source.kind=="craft" then result.message="Find a crafter for "..source.name.." (skill "..tostring(source.skill or "?").."). Recipe #"..tostring(source.spellID or "?").."; materials and recipe access must be checked." end
     if source.questID and not LibQuestieDB then result.message="Track this quest from your log, or install QuestieDB for known quest-giver locations." end
     return result
 end

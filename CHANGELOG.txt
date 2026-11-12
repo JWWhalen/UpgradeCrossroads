@@ -1,3 +1,15 @@
+v0.7.2
+- Added a Recipe button to the fixed item action area. It jumps to the recipe
+  instructions and selects an eligible crafting source when needed.
+
+v0.7.1
+- Added a Recipe section for crafted gear in Journal, with the same acquisition
+  instructions available in Hunts and the tracker. Shows profession, verified
+  learning skill and how to obtain the recipe where source data is available.
+- Show on map can pin verified, faction-appropriate recipe locations. Recipe
+  records with incomplete evidence are labeled, and saved hunts pick up the
+  new details automatically.
+
 v0.7.0
 - Added All / slot so the consolidated Journal can browse every matching item.
 - Consolidated gear browsing in Journal. Equipment selects one slot or all slots;

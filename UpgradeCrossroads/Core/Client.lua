@@ -110,11 +110,24 @@ function C.UpdatePins()
         if C.Owned(pin.item.id) and not pin.acquired then pin.acquired=true; pin.acquiredAt=time(); XC:Print("Target obtained: "..pin.item.name) end
     end
 end
+function XC:GetRecipeSource(source)
+    if source.kind=="craft" then return self.RecipeSources and self.RecipeSources[source.spellID] end
+end
 function XC:SourceText(source)
     local text
     if source.personal then text="Personal "..(self.KindLabels[source.kind] or "target")..": "..source.name.."\n"..(source.zone or "")
     elseif source.kind=="quest" then text="Quest: "..source.name.."\n"..(source.zone or "").."  /  #"..tostring(source.questID)
-    elseif source.kind=="craft" then text=source.name.."  /  Skill "..(source.skill or "?").."\nRecipe #"..(source.spellID or "?")
+    elseif source.kind=="craft" then
+        local recipe=self:GetRecipeSource(source)
+        text=source.name or "Crafting"
+        if recipe and recipe.skill then text=text.."  /  Skill "..recipe.skill end
+        if recipe then
+            text=text.."\n"..recipe.text
+            if recipe.basis=="Classic baseline" then text=text.."\nClassic recipe source. Verify in Forever." end
+        else
+            text=text.."\nRecipe source unverified."
+            if source.spellID then text=text.." Crafting spell #"..source.spellID.."." end
+        end
     else text=(source.name or self.KindLabels[source.kind] or "Target").."\n"..(source.zone or source.details or "Source details not supplied") end
     if source.side==1 then text=text.."\nAlliance only" elseif source.side==2 then text=text.."\nHorde only" end
     return text
@@ -128,7 +141,7 @@ function XC:Availability(row)
         if row.source.questID and safe(C_QuestLog and C_QuestLog.IsOnQuest,row.source.questID) then return "In your quest log" end
         return "Check quest chain and availability"
     end
-    if row.source.kind=="craft" then return "Check recipe access and materials" end
+    if row.source.kind=="craft" then return "Crafted gear" end
     if row.source.kind=="dungeon" or row.source.kind=="raid" then return "Check access, group and loot availability" end
     return "Confirm source requirements"
 end

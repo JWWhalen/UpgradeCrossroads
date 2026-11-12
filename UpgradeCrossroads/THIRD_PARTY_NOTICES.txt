@@ -8,11 +8,16 @@ Classic baseline game facts: Blizzard Classic Era client 1.15.9.70576.
 World of Warcraft and its game assets are the property of Blizzard Entertainment.
 No game art or client code is bundled; runtime icons are provided by the client.
 
-Forever.lua holds facts derived from ForeverLevelingBiS by Thunder:
+MIT-licensed data used by Upgrade Crossroads:
+ForeverLevelingBiS by Thunder for the source-linked catalog.
+LibProfessionDB v1.9.1 for recipe teaching items, automatic acquisition flags,
+and clearly labeled Classic acquisition leads.
+https://www.curseforge.com/wow/addons/libprofessiondb/files/9095167
 
 MIT License
 
 Copyright (c) 2026 Thunder
+Copyright (c) 2026 Pimptasty
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,3 +41,9 @@ Outdoor entrance/approach facts adapted from Polestar data/codex/entrances.json,
 GPL-3.0, same pinned commit. Original reference URLs and notes are retained in
 research/navigation/entrances.json and Data/Locations.lua. Coordinates are
 reported source facts, not a claim of live verification by Upgrade Crossroads.
+
+Recipe observations adapted from EG Link output: World of Warcraft: Forever
+by Efficient Games, CC BY 4.0. Upgrade Crossroads selects matching records
+and summarizes them in its own wording. See SOURCES.md.
+https://github.com/JIVESCORP/eg-link-output-wowf/tree/3067c6919046428152f2152fa551f44a8c215d79
+https://creativecommons.org/licenses/by/4.0/
