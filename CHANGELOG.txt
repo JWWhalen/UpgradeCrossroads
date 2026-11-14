@@ -1,3 +1,28 @@
+v0.9.0
+- Removed the hidden Compare page and its duplicate gear scoring work.
+- Reworked Journal around one item card, signed stat changes and a clear source.
+  Search accepts item IDs and links. Destinations highlights the current zone
+  when it matches the catalog. The equipment picker shows matching item counts.
+- Shows upgrade markers in Blizzard quest rewards with the same comparison as
+  bags and tooltips. Tooltips show saved or obtained hunt status.
+- Hunts is searchable and keeps the active item first. The tracker and Hunts
+  share progress, and stopping tracking preserves separately placed map pins.
+- Split Settings into Appearance, Gear hints and Stat weights. The weights editor
+  has labeled fields and Appearance offers direct preset choices.
+- Add item and Set location can capture the player's current position.
+- Added 10 quest rewards, including Riverglades gear. Restored Defense scoring
+  for 97 existing items and corrected Brilliant Cloak's quest source.
+
+v0.8.0
+- Added equipment comparisons to item tooltips and upgrade markers to Blizzard bags.
+  Each can be disabled in Settings.
+- Browse quest zones and dungeons from Journal with counts and item sources.
+  Set how many levels ahead to browse in Future goals.
+- Edit the active spec's stat weights in Settings.
+- Corrected dual-wield and polearm training requirements for Forever.
+- Added 32 items from 13 dungeon quests and corrected the Baron Marinous
+  reward sources in Darkshore, including the Mathystra Channeling Orb off-hand.
+
 v0.7.2
 - Added a Recipe button to the fixed item action area. It jumps to the recipe
   instructions and selects an eligible crafting source when needed.

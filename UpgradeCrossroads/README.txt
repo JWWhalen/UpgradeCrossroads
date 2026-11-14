@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.7.2
+UPGRADE CROSSROADS 0.9.0
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -18,9 +18,9 @@ The approved emblem beside your minimap opens the planner. Right-click for Hunts
 drag it to reposition. /uc minimap reset restores the shortcut if it goes missing.
 
 The Journal opens first. It groups ranked suggestions under expandable equipment
-headings, with a parchment description and reward on the right. Choose your spec,
+headings, with the selected item's stats, comparison and source on the right. Choose your spec,
 then select any item. Track, Show on map, Remove and Chat are on that same item.
-Click the reward itself to start its guide. Shift-/right-click drafts an item
+Click the item card to start its guide. Shift-/right-click drafts an item
 link; Ctrl-click previews it. Nothing sends a chat message automatically.
 
 Active shows eligible suggestions. Completed records items actually observed in
@@ -28,15 +28,29 @@ your bags/equipment or acquired saved hunts; it is not a full historic collectio
 Removed hides an item until you restore it, preserving its hunt notes/checklists.
 Use Filters for source paths, Solo, Crafts, AH and Alliance/Horde/Both. Available
 now uses your current level; Future goals includes later levels. The left search
-matches item, boss, quest, recipe source and zone names across the equipment filter.
+matches item, boss, quest, recipe source and zone names. You can paste an item
+link or enter an item ID.
 Choose 1/3/5/10 or All picks per slot; All keeps every matching item reachable.
 These ranks use model weights, not verified BiS or a simulation.
 
+Use Destinations beside Equipment to see quest zones and dungeons with matching
+gear. Your current zone appears first when it matches a listed destination.
+Select a destination to see its ranked drops and rewards. In Future goals,
+open Filters to look ahead 3, 5 or 10 levels or browse all levels.
+
+GEAR UPGRADE HINTS
+Hover an item to see its model score and how it compares with equipped gear for
+your active spec. Tooltips identify saved and obtained targets. Blizzard bags
+and quest reward panels mark comparable upgrades. Both kinds of hints can be
+turned off under Settings / Gear hints. Catalog rank uses the available catalog entries for
+your level and faction. Future gear and comparisons with missing data show their
+status separately. Weapon loadout changes and item effects can affect the result.
+
 Journal is the single gear-browsing page. Use Equipment to show all slots or
 choose one slot, then inspect the equipped item and candidate together in the
-detail pane. Equipped stats, model score and Chat stay with that comparison.
-Source paths remain in Filters. Hunts retains your saved preparation checklists
-and notes. All pages share the same window; appearance, minimap, scaling and
+detail pane. Signed stat changes appear when the two items can be compared.
+Hunts puts the active item first and lets you search by item, source or note.
+Hunts and the tracker share preparation progress. All pages share the same window; appearance, minimap, scaling and
 source correction still work.
 
 CLASS AND SPEC
@@ -48,7 +62,8 @@ separate melee and ranged playstyle choices; Druid Feral has cat and bear choice
 These are starter role-weight presets, not guide-derived or simulated spec
 rankings. Specs sharing a role intentionally share their default weights. The
 profile explanation describes what is scored and what is not. /uc weights edits
-only the selected spec; /uc weights reset restores only that spec's defaults.
+only the selected spec. The Stat weights section of Settings saves and resets the
+same weights for that spec.
 Your old broad-role selection maps to a suitable spec for your class. Existing
 custom role weights are copied to that class's matching role presets once, while
 existing spec overrides and old weight entries are preserved. Hunts and notes
@@ -73,8 +88,8 @@ Journal, Hunts, Settings, Help and Add item share one main window. One page
 is shown at a time. They share size, scale, position and a native close button;
 the tracker alone stays separate. Closing the shell hides every page.
 
-Settings or /uc appearance opens saved presets, panel opacity, custom colors,
-font choice, text size, optional outlines and a window-scale slider. WoW's
+Settings organizes controls under Appearance, Gear hints and Stat weights.
+Appearance has saved presets, opacity, colors, font, text size, outlines and scale. WoW's
 standard font is the default throughout the addon, including body text, item
 rows, controls and the tracker. Plain readable text remains an optional font.
 Older font settings switch once to the WoW default on upgrade; choose Plain
@@ -146,7 +161,8 @@ type, and enter the source name and location/requirements. The item's data must
 be in the client cache or bundled catalog. If the client is loading it, wait a
 moment and press Save target again. Adding a source replaces that item's catalog
 entry for this character. It is labeled Personal, not independently verified.
-An optional valid map ID and X/Y percentages add a destination waypoint.
+Use current position fills in the map and coordinates where you are standing.
+You can also enter the map ID and X/Y percentages manually.
 No coordinates are invented for catalog entries with unknown positions.
 
 SCORING AND DATA LIMITS
@@ -158,9 +174,9 @@ Weapon setups that differ (one-hand versus two-hand) do not receive a delta.
 Weapon skill, talents, prerequisites and quest availability can still restrict
 an otherwise class-compatible item. Custom sources are manually supplied.
 
-Catalog: 3,529 source-linked items from an attributed snapshot dated 2026-10-13.
-2,149 entries have Forever stat overrides; 1,380 use clearly labeled Classic
-baseline stats. See SOURCES.md. New content and changed stats can be missing.
+The catalog combines the October 13 base snapshot with reviewed Forever quest
+rewards. Journal and /uc status display the bundled item count. See SOURCES.md
+for coverage, dates and attribution. Entries using Classic stats are labeled.
 Known equipped items use the same snapshot for consistent model comparisons.
 Client-loaded stats are used for equipment outside the catalog and personal
 targets where available. Incomplete comparisons are labeled instead of assigned
@@ -198,7 +214,7 @@ snapshot until a maintained data release replaces it.
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This v0.7.2 update has
+ownership changes, UI construction and command/event flows. This v0.9.0 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

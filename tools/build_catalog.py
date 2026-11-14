@@ -44,17 +44,12 @@ for qid, row in d.quests.items():
     h = list(map(int, fields[0].split()))
     quests[qid] = dict(level=h[0], minLevel=h[1], side=h[2], zoneID=h[3], raceMask=h[4], classMask=h[5], group=h[6] != 0, name=fields[3])
 
-catalog = {}
-missing = []
-for itemID, source in sorted(d.src.items()):
-    raw = g.rows[itemID]
-    if not raw:
-        missing.append(itemID)
-        continue
+def equipment(item_id, name, raw, basis):
     tokens = raw.split()
     inv, ilvl, req, quality, cls, sub = map(int, tokens[:6])
     # Wearable equipment only. Bags, shirts, tabards, ammo and non-equipment are excluded.
-    if inv not in {1,2,3,5,6,7,8,9,10,11,12,13,14,15,16,17,20,21,22,23,25,26,28}: continue
+    if inv not in {1,2,3,5,6,7,8,9,10,11,12,13,14,15,16,17,20,21,22,23,25,26,28}:
+        return None
     stats = {}
     restrictions = {}
     for token in tokens[6:]:
@@ -64,10 +59,27 @@ for itemID, source in sorted(d.src.items()):
             value = float(number)
             if value.is_integer(): value = int(value)
             if key in {'cls','uniq'}: restrictions[key] = value
-            else: stats[key] = value
+            else:
+                # Upstream uses "defense" for the flat Defense shown on gear.
+                # The existing tank model and saved weights use "def".
+                key = 'def' if key == 'defense' else key
+                assert key not in stats or stats[key] == value, f'Conflicting {key} stat for item {item_id}'
+                stats[key] = value
     if stats.get('speed',0)>0:
         stats['dps'] = (stats.get('dmin',0)+stats.get('dmax',0))/2/(stats['speed']/1000)
-    sources=[]
+    return dict(id=item_id,name=name,inv=inv,ilvl=ilvl,req=req,quality=quality,classID=cls,subclassID=sub,stats=stats,classMask=restrictions.get('cls',0),unique=restrictions.get('uniq',0)==1,basis=basis,sources=[])
+
+catalog = {}
+missing = []
+for itemID, source in sorted(d.src.items()):
+    raw = g.rows[itemID]
+    if not raw:
+        missing.append(itemID)
+        continue
+    item = equipment(itemID, d.names[itemID] or ('Item #'+str(itemID)), raw, 'forever' if g.overrides[itemID] else 'classic')
+    if not item:
+        continue
+    sources=item['sources']
     for token in source.split():
         if token.startswith('q'):
             qid=int(token[1:]); q=quests.get(qid)
@@ -87,10 +99,75 @@ for itemID, source in sorted(d.src.items()):
             spell,prof,skill=map(int,m.groups())
             sources.append(dict(kind='craft',spellID=spell,name=d.professions[prof] or 'Crafting',skill=skill,zone='Recipe access and materials must be checked'))
     if sources:
-        catalog[itemID]=dict(id=itemID,name=d.names[itemID] or ('Item #'+str(itemID)),inv=inv,ilvl=ilvl,req=req,quality=quality,classID=cls,subclassID=sub,stats=stats,classMask=restrictions.get('cls',0),unique=restrictions.get('uniq',0)==1,basis='forever' if g.overrides[itemID] else 'classic',sources=sources)
+        catalog[itemID]=item
+
+# Reviewed live quest reward observations extend the historical snapshot.
+# The acquisition evidence and the equipment stat evidence are independent.
+reviewed = json.loads((ROOT/'research'/'live_quest_rewards.json').read_text(encoding='utf-8'))
+assert re.fullmatch(r'[a-f0-9]{40}', reviewed['commit'])
+assert re.fullmatch(r'1\.60\.1\.\d+', reviewed['build'])
+assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', reviewed['observedThrough'])
+reviewed_stats = reviewed['foreverStats']
+reviewed_quests = set()
+reviewed_items = set()
+reviewed_links = 0
+added_items = 0
+added_links = 0
+for quest in reviewed['quests']:
+    quest_id = quest['questID']
+    assert type(quest_id) is int and quest_id > 0 and quest_id not in reviewed_quests
+    assert quest['name'].strip() and quest['zone'].strip() and quest['zoneID'] > 0
+    assert type(quest['side']) is int and quest['side'] in (0, 1, 2)
+    assert type(quest['minLevel']) is int and 1 <= quest['minLevel'] <= 60
+    assert type(quest['group']) is bool
+    if 'details' in quest:
+        assert isinstance(quest['details'], str) and quest['details'].strip()
+    assert quest['rewards'], f'No reviewed rewards for quest {quest_id}'
+    reviewed_quests.add(quest_id)
+    for item_key, name in quest['rewards'].items():
+        item_id = int(item_key)
+        assert item_id > 0 and str(item_id) == item_key and name.strip()
+        reviewed_items.add(item_key)
+        reviewed_links += 1
+        stats = reviewed_stats.get(item_key)
+        if stats:
+            assert len(set(stats['evidence'])) >= 2 and all(url.startswith('https://') for url in stats['evidence'])
+        item = catalog.get(item_id)
+        if item is None:
+            raw = stats['equipment'] if stats else g.rows[item_id]
+            basis = 'forever' if stats or g.overrides[item_id] else 'classic'
+            assert raw, f'Missing equipment stats for reviewed reward {item_id}'
+            item = equipment(item_id, name, raw, basis)
+            assert item and item['stats'], f'No supported equipment stats for reviewed reward {item_id}'
+            catalog[item_id] = item
+            added_items += 1
+        elif stats:
+            published = equipment(item_id, name, stats['equipment'], 'forever')
+            assert {**item, 'sources': []} == published, f'Reviewed reward differs from existing stats for {item_id}'
+        source = dict(
+            kind='quest', questID=quest_id, name=quest['name'], zone=quest['zone'],
+            zoneID=quest['zoneID'], minLevel=quest['minLevel'], side=quest['side'],
+            raceMask=0, classMask=0, group=quest['group'], sourceBuild=reviewed['build'],
+        )
+        if 'details' in quest:
+            source['details'] = quest['details']
+        old_index = next((i for i, current in enumerate(item['sources']) if current.get('questID') == quest_id), None)
+        if old_index is None:
+            item['sources'].append(source)
+            added_links += 1
+        else:
+            item['sources'][old_index] = source
+assert set(reviewed_stats) <= reviewed_items, 'Published Forever stats must have a reviewed quest source'
+
+meta = dict(count=len(catalog),date=snapshot,sourceVersion=str(g.sourceMeta.version),
+            upstream=(ROOT/'research'/'ref.txt').read_text().strip(),
+            liveQuestBuild=reviewed['build'],liveQuestDate=reviewed['observedThrough'],
+            liveQuestCount=len(reviewed_quests),liveQuestRewardLinks=reviewed_links,
+            liveQuestItemCount=len(reviewed_items),liveQuestStatCount=len(reviewed_stats),
+            liveQuestAddedItems=added_items,liveQuestAddedLinks=added_links)
 
 out=ROOT/'UpgradeCrossroads'/'Data'/'Catalog.lua'
-out.write_text('-- Generated by tools/build_catalog.py. See SOURCES.md and THIRD_PARTY_NOTICES.txt.\nlocal _, XC = ...\nXC.Catalog = '+serialize(catalog)+'\nXC.CatalogMeta = '+serialize(dict(count=len(catalog),date=snapshot,sourceVersion=str(g.sourceMeta.version),upstream=(ROOT/'research'/'ref.txt').read_text().strip()))+'\n')
+out.write_text('-- Generated by tools/build_catalog.py. See SOURCES.md and THIRD_PARTY_NOTICES.txt.\nlocal _, XC = ...\nXC.Catalog = '+serialize(catalog)+'\nXC.CatalogMeta = '+serialize(meta)+'\n', encoding='utf-8')
 (ROOT/'research'/'catalog.json').write_text(json.dumps(catalog))
 print(json.dumps(dict(items=len(catalog),foreverOverrides=sum(x['basis']=='forever' for x in catalog.values()),sourceKinds=Counter(s['kind'] for i in catalog.values() for s in i['sources']),missingStats=len(missing))))
 

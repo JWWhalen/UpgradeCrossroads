@@ -47,3 +47,10 @@ by Efficient Games, CC BY 4.0. Upgrade Crossroads selects matching records
 and summarizes them in its own wording. See SOURCES.md.
 https://github.com/JIVESCORP/eg-link-output-wowf/tree/3067c6919046428152f2152fa551f44a8c215d79
 https://creativecommons.org/licenses/by/4.0/
+
+Reviewed quest rewards and item names adapted from EG Link output: World of
+Warcraft: Forever by Efficient Games, CC BY 4.0. Upgrade Crossroads selects
+records from quests.enUS.json and item_hotfixes.enUS.json and adds canonical
+dungeon identifiers, separately researched eligibility, and equipment stats.
+https://github.com/JIVESCORP/eg-link-output-wowf/tree/164bd1e2d89579ada4ee5e2de7e5fd4db684a9f1/data/wowf/1.60.1.70888
+https://creativecommons.org/licenses/by/4.0/

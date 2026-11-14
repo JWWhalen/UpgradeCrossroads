@@ -10,7 +10,7 @@ local weaponSkills = {
     WARLOCK={7,10,15,19}, DRUID={4,5,6,10,13,15},
 }
 local armorLimit={WARRIOR=4,PALADIN=4,HUNTER=3,ROGUE=2,PRIEST=1,SHAMAN=3,MAGE=1,WARLOCK=1,DRUID=2}
-local dual={WARRIOR=true,ROGUE=true,HUNTER=true,SHAMAN=true}
+local dual={WARRIOR=20,ROGUE=10,HUNTER=20}
 local shield={WARRIOR=true,PALADIN=true,SHAMAN=true}
 local function contains(t,v) for _,x in ipairs(t or {}) do if x==v then return true end end return false end
 local function maskAllows(mask, index)
@@ -21,6 +21,18 @@ end
 Rules.MaskAllows=maskAllows
 Rules.FactionOrder={"alliance","horde","both"}
 Rules.FactionLabels={alliance="Alliance",horde="Horde",both="Both"}
+function Rules.WeaponLevel(item,context,slot)
+    if item.classID~=2 then return 0 end
+    return math.max(item.subclassID==6 and 20 or 0,slot.id==17 and (dual[context.class] or 0) or 0)
+end
+local function advancedArmorLevel(item,context)
+    local armor=armorLimit[context.class]
+    if item.classID==4 and (armor==3 or armor==4) and item.subclassID==armor then return 40 end
+    return 0
+end
+function Rules.MinimumLevel(item,context,slot)
+    return math.max(item.req or 0,Rules.WeaponLevel(item,context,slot),advancedArmorLevel(item,context))
+end
 function Rules.FactionMode(options,context)
     local mode=options and options.faction
     if Rules.FactionLabels[mode] then return mode end
@@ -40,12 +52,15 @@ function Rules.Usable(item, context, slot)
         return false,"Hunter shot weapon"
     end
     if slot.id==17 and item.classID==2 and not dual[context.class] then return false,"No dual wield" end
+    if (context.level or 1)<Rules.WeaponLevel(item,context,slot) then return false,"Weapon training" end
     if item.inv==14 and not shield[context.class] then return false,"Shield restriction" end
     if item.classID==4 then
         local maxArmor=armorLimit[context.class] or 1
-        if (context.level or 1)<40 and (context.class=="WARRIOR" or context.class=="PALADIN" or context.class=="HUNTER" or context.class=="SHAMAN") then maxArmor=maxArmor-1 end
         -- A future armor tier may be planned, but never counted as wearable now.
-        if item.subclassID>=1 and item.subclassID<=4 and item.subclassID>maxArmor then return false,"Armor training" end
+        if item.subclassID>=1 and item.subclassID<=4
+            and (item.subclassID>maxArmor or (context.level or 1)<advancedArmorLevel(item,context)) then
+            return false,"Armor training"
+        end
         if item.subclassID==7 and context.class~="PALADIN" then return false,"Libram" end
         if item.subclassID==8 and context.class~="DRUID" then return false,"Idol" end
         if item.subclassID==9 and context.class~="SHAMAN" then return false,"Totem" end
@@ -92,6 +107,9 @@ function Rules.SourceAllowed(source,context,options)
 end
 function Rules.Build(catalog,context,options,slot,profile)
     local lanes={reliable={},dungeon={},longterm={}}
+    local futureContext={}
+    for k,v in pairs(context) do futureContext[k]=v end
+    futureContext.level=60
     local baseline=context.equipped and context.equipped[slot.id]
     local baselineScore=Rules.Score(baseline,profile.weights,slot.id,profile.weaponDpsSlots)
     if not baseline and not (context.occupied and context.occupied[slot.id]) then baselineScore=0 end
@@ -99,26 +117,20 @@ function Rules.Build(catalog,context,options,slot,profile)
         lanes[lane][#lanes[lane]+1]={item=item,source=source,score=score,delta=delta,baseline=baselineScore,minLevel=minLevel,locked=minLevel>context.level}
     end
     for _,item in pairs(catalog) do
-        local futureContext={}
-        for k,v in pairs(context) do futureContext[k]=v end
-        futureContext.level=60
-        local usable=Rules.Usable(item,context,slot)
-        local futureUsable=Rules.Usable(item,futureContext,slot)
-        if futureUsable and not (context.worn and context.worn[item.id]) then
+        if not (context.worn and context.worn[item.id]) and Rules.Usable(item,futureContext,slot) then
             local score=Rules.Score(item,profile.weights,slot.id,profile.weaponDpsSlots)
             local comparable=baselineScore~=nil
             if slot.id==16 and baseline and ((baseline.inv==17)~=(item.inv==17)) then comparable=false end
             if baseline and baseline.incomplete then comparable=false end
             if item.incomplete then comparable=false end
-            local delta=comparable and score-baselineScore or nil
+            local delta=comparable and score and score-baselineScore or nil
             if score and score>0 and (not comparable or delta>0.01) then
+                local level=Rules.MinimumLevel(item,context,slot)
                 for _,source in ipairs(item.sources or {}) do
                     if Rules.SourceAllowed(source,context,options) then
-                        local minLevel=math.max(item.req or 0, source.minLevel or 0)
-                        if item.classID==4 and item.subclassID==4 and armorLimit[context.class]==4 then minLevel=math.max(minLevel,40) end
-                        if item.classID==4 and item.subclassID==3 and (context.class=="HUNTER" or context.class=="SHAMAN") then minLevel=math.max(minLevel,40) end
+                        local minLevel=math.max(level,source.minLevel or 0)
                         insert("longterm",item,source,score,minLevel,delta)
-                        if usable and minLevel<=context.level then
+                        if minLevel<=context.level then
                             if source.kind=="dungeon" or source.kind=="raid" or source.group then insert("dungeon",item,source,score,minLevel,delta)
                             elseif source.kind~="world" then insert("reliable",item,source,score,minLevel,delta) end
                         end

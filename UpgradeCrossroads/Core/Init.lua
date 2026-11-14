@@ -24,6 +24,8 @@ local function defaults()
     if db.options.crafted==nil then db.options.crafted=true end
     if db.options.auction==nil then db.options.auction=false end
     if db.options.solo==nil then db.options.solo=false end
+    if db.options.upgradeTooltips==nil then db.options.upgradeTooltips=true end
+    if db.options.bagUpgrades==nil then db.options.bagUpgrades=true end
     db.slot=db.slot or 16
     db.pinOrder=db.pinOrder or 0
     local _,class=UnitClass("player")
@@ -36,22 +38,19 @@ local function open()
     if XC.window:IsShown() then XC.window:Hide() else XC:ShowPage(XC.window.activePage or "gear") end
 end
 local function command(msg)
+    if not XC.db then return end
     local cmd,rest=(msg or ""):match("^(%S*)%s*(.-)%s*$")
     cmd=(cmd or ""):lower()
     if cmd=="" then open(); return end
     if cmd=="appearance" then
         if InCombatLockdown() then XC:Print("Open Appearance after combat."); return end
-        XC:ShowAppearance()
+        XC:ShowAppearance(rest)
     elseif cmd=="resetwindows" then
-        for _,f in ipairs({XC.window or false,XC.guide or false,XC.huntWindow or false,XC.editor or false,XC.about or false,XC.appearanceWindow or false}) do
-            if f and f.ResetGeometry then f:ResetGeometry() end
-        end
-        -- Clear saved geometry for windows not constructed in this session.
-        for id in pairs(XC.db.windows) do
-            local live=(id=="planner" and XC.window) or (id=="tracker" and XC.guide) or (id=="hunts" and XC.huntWindow) or (id=="editor" and XC.editor) or (id=="help" and XC.about) or (id=="appearance" and XC.appearanceWindow)
-            if not live then XC.db.windows[id]=nil end
-        end
-        XC.db.guidePosition=nil; XC:Print("Window sizes, positions and scales restored.")
+        for id in pairs(XC.db.windows) do XC.db.windows[id]=nil end
+        XC.db.guidePosition=nil
+        if XC.window then XC.window:ResetGeometry() end
+        if XC.guide then XC.guide:ResetGeometry() end
+        XC:Print("Window sizes, positions and scales restored.")
     elseif cmd=="guide" then
         XC.db.trackerHidden=nil
         if InCombatLockdown() then XC:Print("Open the guide after combat."); return end
@@ -60,24 +59,14 @@ local function command(msg)
         if not XC.db.activeHunt then XC:Print("Click an item or Track on an item card to start a guide.") end
     elseif cmd=="hunts" or cmd=="add" or cmd=="about" then
         if InCombatLockdown() then XC:Print("Open Upgrade Crossroads after combat."); return end
-        XC:BuildUI(); XC.window:Show()
         if cmd=="hunts" then XC:ShowHunts() elseif cmd=="add" then XC:ShowTargetEditor() else XC:ShowAbout() end
     elseif cmd=="weights" then
-        local profile=XC:GetProfile(XC.db.profile)
-        if rest=="reset" then XC.db.weights[profile.id]=nil; XC:Print("Restored "..profile.label.." weights."); XC:Refresh(); return end
         if rest=="" then
-            local parts={}; for k,v in pairs(profile.weights) do parts[#parts+1]=k.."="..v end; table.sort(parts)
-            XC:Print(profile.label..": "..table.concat(parts," ")); return
+            XC:Print(XC:GetProfile(XC.db.profile).label..": "..XC:StatWeightText())
+        else
+            local _,message=XC:ApplyStatWeights(rest)
+            if message then XC:Print(message) end
         end
-        local allowed={str=true,agi=true,sta=true,int=true,spi=true,sp=true,heal=true,ap=true,rap=true,armor=true,dps=true,crit=true,hit=true,mpr=true,def=true,dodge=true,parry=true,block=true}
-        local nextWeights={}; for k,v in pairs(profile.weights) do nextWeights[k]=v end
-        local changed=0
-        for token in rest:gmatch("%S+") do
-            local key,value=token:match("^(%a+)=([%d%.%-]+)$"); value=tonumber(value)
-            if not allowed[key] or not value or value<0 or value>1000 then XC:Print("Invalid weight: "..token..". Example: /uc weights str=1 agi=0.8 sta=0.25"); return end
-            nextWeights[key]=value; changed=changed+1
-        end
-        if changed>0 then XC.db.weights[profile.id]=nextWeights; XC:Print("Saved "..profile.label.." weights."); XC:Refresh() end
     elseif cmd=="minimap" then
         if rest=="hide" then XC.db.minimap.hidden=true
         elseif rest=="reset" then XC.db.minimap.angle=225; XC.db.minimap.hidden=false
@@ -101,17 +90,29 @@ local events=CreateFrame("Frame")
 events:RegisterEvent("ADDON_LOADED")
 events:SetScript("OnEvent",function(_,event,arg1)
     if event=="ADDON_LOADED" then
-        if arg1~=XC.name then return end
+        if arg1~=XC.name then
+            if XC.db then XC:InitializeQuestUpgradeHints() end
+            return
+        end
         defaults()
+        XC:RefreshSavedHuntSources()
+        XC:InitializeUpgradeHints()
+        XC:InitializeQuestUpgradeHints()
         XC:ApplyAppearance()
         XC:CreateMinimapButton()
         XC:RenderGuide()
         for _,name in ipairs({"PLAYER_ENTERING_WORLD","PLAYER_EQUIPMENT_CHANGED","BAG_UPDATE_DELAYED","QUEST_LOG_UPDATE","QUEST_TURNED_IN","PLAYER_LEVEL_UP","GET_ITEM_INFO_RECEIVED","ITEM_DATA_LOAD_RESULT","PLAYER_REGEN_ENABLED"}) do events:RegisterEvent(name) end
         XC:Print("Ready. Type /uc to compare your upgrade paths.")
     elseif event=="GET_ITEM_INFO_RECEIVED" or event=="ITEM_DATA_LOAD_RESULT" then
-        if XC.requested and XC.requested[arg1] then XC:QueueRefresh() end
+        if XC.requested and XC.requested[arg1] then
+            XC:InvalidateUpgradeHints()
+            XC:QueueRefresh()
+        end
     else
         if event=="PLAYER_ENTERING_WORLD" then XC:CreateMinimapButton() end
+        if event=="PLAYER_EQUIPMENT_CHANGED" or event=="PLAYER_LEVEL_UP" or event=="PLAYER_ENTERING_WORLD" or event=="QUEST_TURNED_IN" then
+            XC:InvalidateUpgradeHints()
+        end
         XC:QueueRefresh()
     end
 end)

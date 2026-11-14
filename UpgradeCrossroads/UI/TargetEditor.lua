@@ -3,6 +3,19 @@ local W=XC.W
 local kinds={"dungeon","quest","craft","raid","vendor","reputation","auction","world"}
 local function at(f,x,y) f:SetPoint("TOPLEFT",x,-y); return f end
 local function setStatus(f,message) f.status:SetText(message); f:ApplyLayout() end
+local function setCurrentLocation(f)
+    local safe=XC.Client.Safe
+    local mapID=C_Map and safe(C_Map.GetBestMapForUnit,"player")
+    local position=mapID and safe(C_Map.GetPlayerMapPosition,mapID,"player")
+    local x,y=safe(position and position.GetXY,position)
+    if type(x)~="number" or type(y)~="number" or not XC.Navigation.ValidPoint({mapID=mapID,x=x*100,y=y*100}) then
+        setStatus(f,"Your current map position is unavailable. You can enter coordinates manually.")
+        return
+    end
+    f.mapID.edit:SetText(tostring(mapID)); f.x.edit:SetText(string.format("%.2f",x*100)); f.y.edit:SetText(string.format("%.2f",y*100))
+    local info=safe(C_Map.GetMapInfo,mapID)
+    setStatus(f,"Current position filled in"..(info and info.name and (" in "..info.name) or "")..". Save to use it for this source.")
+end
 function XC:ShowTargetEditor(row,lane)
     self:BuildUI()
     if not self.editor then
@@ -29,14 +42,15 @@ function XC:ShowTargetEditor(row,lane)
         f.formLabels.y=at(W.JournalText(body,"Y (0-100)",10),349,367)
         f.mapID=at(W.PaperInput(body,155,28),24,387)
         f.x=at(W.PaperInput(body,130,28),199,387); f.y=at(W.PaperInput(body,130,28),349,387)
+        f.useCurrent=W.Button(body,"Use current position",190,30,function() setCurrentLocation(f) end)
         f.status=at(W.JournalText(body,"Personal source. Item stats load from the client or bundled catalog.",10,610),24,426)
         f.save=at(W.Button(body,"Save target",180,32,function() XC:SavePersonalTarget() end),454,482)
         f.cancel=at(W.Button(body,"Cancel",100,32,function() XC:ShowPage(f.returnPage or "gear") end),24,482)
-        f.tip=at(W.JournalText(body,"Coordinates use percentages, such as 42.5 / 71.0.",11,610),24,530)
         W.Hint(f.item,"Paste an item link or enter its numeric ID. Use the card Track button for catalog items.")
         W.Hint(f.kindButton,"Select the type of source: quest, dungeon, craft, vendor and more.")
         W.Hint(f.details,"Optional notes about the zone, access or materials. This does not create a route.")
         W.Hint(f.mapID,"Numeric UI map ID, not the zone name. X and Y are percentages on that map.")
+        W.Hint(f.useCurrent,"Fill in the map and coordinates where you are standing.")
         f.Layout=function(_,width,height)
             body:SetWidth(width-38)
             local inner=width-88
@@ -64,11 +78,12 @@ function XC:ShowTargetEditor(row,lane)
                 local field=f[key]; field:SetWidth(col); W.Place(field,24+(i-1)*(col+16),y)
                 coordHeight=math.max(coordHeight,field:GetHeight())
             end
-            y=textAt(f.status,24,y+coordHeight+18,inner)+18
+            W.FitButton(f.useCurrent,190); W.Place(f.useCurrent,24,y+coordHeight+8)
+            y=textAt(f.status,24,y+coordHeight+f.useCurrent:GetHeight()+20,inner)+18
             W.FitButton(f.save,180); W.FitButton(f.cancel,100)
             W.Place(f.cancel,24,y); W.Place(f.save,24+inner-f.save:GetWidth(),y)
             y=y+math.max(f.save:GetHeight(),f.cancel:GetHeight())+16
-            body:SetHeight(textAt(f.tip,24,y,inner)+20)
+            body:SetHeight(y+10)
         end
     end
     local f=self.editor
@@ -123,7 +138,10 @@ function XC:SavePersonalTarget()
     if kind=="quest" then source.questID=nil end
     copy.sources={source}; self.db.custom[id]=copy
     local lane=(kind=="dungeon" or kind=="raid") and "dungeon" or (kind=="world" and "longterm" or "reliable")
-    self:Pin({item=copy,source=source},lane)
+    local pin=self:EnsureHunt({item=copy,source=source},lane)
+    pin.item=copy; pin.source=source; pin.lane=lane
+    self.Client.UpdatePins()
+    self:Refresh()
     f.item.edit:SetText(""); f.source.edit:SetText(""); f.details.edit:SetText("")
     f.mapID.edit:SetText(""); f.x.edit:SetText(""); f.y.edit:SetText(""); self:ShowPage("hunts")
 end

@@ -1,8 +1,8 @@
 ## Interface: 16001
 ## Title: Upgrade Crossroads
-## Notes: Compare reliable upgrades, dungeon hunts and long-term gear goals.
+## Notes: Find, compare and track gear upgrades in WoW: Forever.
 ## Author: FlakieGames
-## Version: 0.7.2
+## Version: 0.9.0
 ## X-Curse-Project-ID: 1793236
 ## OptionalDeps: QuestieDB, Questie
 ## SavedVariablesPerCharacter: UpgradeCrossroadsDB
@@ -15,13 +15,19 @@ Data\Locations.lua
 Data\RecipeSources.lua
 Core\Rules.lua
 Core\Client.lua
+Core\UpgradeComparison.lua
+Core\CatalogRank.lua
 Core\Navigation.lua
 Core\Journal.lua
 UI\Widgets.lua
+UI\StatWeights.lua
 UI\Appearance.lua
 UI\Guide.lua
 UI\Main.lua
 UI\Journal.lua
+UI\Hunts.lua
 UI\TargetEditor.lua
 UI\Minimap.lua
+UI\UpgradeHints.lua
+UI\QuestUpgradeHints.lua
 Core\Init.lua

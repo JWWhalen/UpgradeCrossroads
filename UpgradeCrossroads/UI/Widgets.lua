@@ -399,6 +399,7 @@ function W.Resizable(f,id,minW,minH,layout)
     f:SetClampedToScreen(true); f:EnableMouse(true)
     if f.SetToplevel then f:SetToplevel(true) end
     local function save()
+        local saved=XC.db.windows[id] or {}; XC.db.windows[id]=saved
         local point,_,relativePoint,x,y=f:GetPoint()
         saved.width=f:GetWidth(); saved.height=f:GetHeight(); saved.scale=f:GetScale()
         saved.position={point=point,relativePoint=relativePoint,x=x,y=y}
@@ -487,16 +488,20 @@ function W.Resizable(f,id,minW,minH,layout)
     local global="UpgradeCrossroads"..id.."Window"
     _G[global]=f; if UISpecialFrames then table.insert(UISpecialFrames,global) end
 end
-function W.StatLine(item,weights)
+function W.StatLine(item,weights,equipped)
     if not item or not item.stats then return "Item stats are loading" end
     local labels={str="Str",agi="Agi",sta="Sta",int="Int",spi="Spirit",sp="Spell",heal="Healing",ap="AP",rap="Ranged AP",armor="Armor",dps="Weapon DPS",crit="Crit",hit="Hit",mpr="MP5",def="Defense"}
     local order={"dps","str","agi","sta","int","spi","sp","heal","ap","rap","armor","crit","hit","mpr","def"}
     local out={}
+    local previous=equipped and equipped.stats
+    local format=previous and "%+g %s" or "%g %s"
     for _,key in ipairs(order) do
-        local v=item.stats[key]
-        if v and v~=0 and (weights[key] or key=="dps") then out[#out+1]=string.format("%g %s",math.floor(v*10+.5)/10,labels[key]) end
-        if #out>=5 then break end
+        local value=item.stats[key] or 0
+        if previous then value=value-(previous[key] or 0) end
+        value=math.floor(value*10+.5)/10
+        if value~=0 and (weights[key] or key=="dps") then out[#out+1]=string.format(format,value,labels[key]) end
+        if not previous and #out>=5 then break end
     end
-    if #out==0 then return "No weighted base stats; inspect effects" end
+    if #out==0 then return previous and "No changes in shown stats" or "No weighted base stats; inspect effects" end
     return table.concat(out,"  /  ")
 end

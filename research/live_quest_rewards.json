@@ -1,0 +1,428 @@
+{
+  "commit": "164bd1e2d89579ada4ee5e2de7e5fd4db684a9f1",
+  "build": "1.60.1.70888",
+  "observedThrough": "2026-11-12",
+  "quests": [
+    {
+      "questID": 1048,
+      "name": "Into The Scarlet Monastery",
+      "side": 2,
+      "zoneID": 796,
+      "zone": "Scarlet Monastery",
+      "minLevel": 33,
+      "rewards": {
+        "6802": "Sword of Omen",
+        "6803": "Prophetic Cane",
+        "10711": "Dragon's Blood Necklace"
+      },
+      "group": true
+    },
+    {
+      "questID": 1053,
+      "name": "In the Name of the Light",
+      "side": 1,
+      "zoneID": 796,
+      "zone": "Scarlet Monastery",
+      "minLevel": 34,
+      "rewards": {
+        "6829": "Sword of Serenity",
+        "6830": "Bonebiter",
+        "6831": "Black Menace",
+        "11262": "Orb of Lorica"
+      },
+      "group": true
+    },
+    {
+      "questID": 1446,
+      "name": "Jammal'an the Prophet",
+      "side": 0,
+      "zoneID": 1417,
+      "zone": "Sunken Temple",
+      "minLevel": 38,
+      "rewards": {
+        "11123": "Rainstrider Leggings",
+        "11124": "Helm of Exile",
+        "270115": "Leggings of Freedom and Sorrow"
+      },
+      "group": true
+    },
+    {
+      "questID": 2240,
+      "name": "The Hidden Chamber",
+      "side": 1,
+      "zoneID": 1337,
+      "zone": "Uldaman",
+      "minLevel": 35,
+      "rewards": {
+        "9626": "Dwarven Charge",
+        "9627": "Explorer's League Lodestar",
+        "270078": "Guardian Staff"
+      },
+      "group": true
+    },
+    {
+      "questID": 2768,
+      "name": "Divino-matic Rod",
+      "side": 0,
+      "zoneID": 1176,
+      "zone": "Zul'Farrak",
+      "minLevel": 40,
+      "rewards": {
+        "9533": "Masons Fraternity Ring",
+        "9534": "Engineer's Guild Headpiece"
+      },
+      "group": true
+    },
+    {
+      "questID": 2846,
+      "name": "Tiara of the Deep",
+      "side": 0,
+      "zoneID": 1176,
+      "zone": "Zul'Farrak",
+      "minLevel": 40,
+      "rewards": {
+        "9527": "Spellshifter Rod",
+        "9531": "Gemshale Pauldrons"
+      },
+      "group": true
+    },
+    {
+      "questID": 3341,
+      "name": "Bring the End",
+      "side": 2,
+      "zoneID": 722,
+      "zone": "Razorfen Downs",
+      "minLevel": 37,
+      "rewards": {
+        "10823": "Vanquisher's Sword",
+        "10824": "Amberglow Talisman",
+        "270081": "Purified Ring"
+      },
+      "group": true
+    },
+    {
+      "questID": 3525,
+      "name": "Extinguishing the Idol",
+      "side": 0,
+      "zoneID": 722,
+      "zone": "Razorfen Downs",
+      "minLevel": 32,
+      "rewards": {
+        "10710": "Dragonclaw Ring"
+      },
+      "group": true
+    },
+    {
+      "questID": 3528,
+      "name": "The God Hakkar",
+      "side": 0,
+      "zoneID": 1417,
+      "zone": "Sunken Temple",
+      "minLevel": 40,
+      "rewards": {
+        "10749": "Avenguard Helm",
+        "10750": "Lifeforce Dirk",
+        "10751": "Gemburst Circlet",
+        "270117": "Shapeshifter's Helm"
+      },
+      "group": true
+    },
+    {
+      "questID": 3636,
+      "name": "Bring the Light",
+      "side": 1,
+      "zoneID": 722,
+      "zone": "Razorfen Downs",
+      "minLevel": 39,
+      "rewards": {
+        "10823": "Vanquisher's Sword",
+        "10824": "Amberglow Talisman",
+        "270081": "Purified Ring"
+      },
+      "group": true
+    },
+    {
+      "questID": 4004,
+      "name": "The Princess Saved?",
+      "side": 2,
+      "zoneID": 1584,
+      "zone": "Blackrock Depths",
+      "minLevel": 48,
+      "rewards": {
+        "12544": "Thrall's Resolve",
+        "12545": "Eye of Orgrimmar"
+      },
+      "group": true
+    },
+    {
+      "questID": 4201,
+      "name": "The Love Potion",
+      "side": 0,
+      "zoneID": 1584,
+      "zone": "Blackrock Depths",
+      "minLevel": 50,
+      "rewards": {
+        "11962": "Manacle Cuffs",
+        "11866": "Nagmara's Whipping Belt",
+        "270120": "Boots of Requite"
+      },
+      "group": true
+    },
+    {
+      "questID": 4363,
+      "name": "The Princess's Surprise",
+      "side": 1,
+      "zoneID": 1584,
+      "zone": "Blackrock Depths",
+      "minLevel": 50,
+      "rewards": {
+        "12548": "Magni's Will",
+        "12543": "Songstone of Ironforge"
+      },
+      "group": true
+    },
+    {
+      "questID": 94927,
+      "name": "Dunston Checks Out",
+      "side": 1,
+      "zoneID": 16591,
+      "zone": "Riverglades",
+      "minLevel": 38,
+      "group": false,
+      "details": "First free Dunston Willis in An Ogre's Captive. Escort him out of Bolder'ok, then report to Watcher Cornelius to choose one reward.",
+      "rewards": {
+        "275025": "Dunston's Ogre Duster",
+        "275023": "Bolder'ok Loincloth",
+        "275021": "Prisoner Handwraps"
+      }
+    },
+    {
+      "questID": 95063,
+      "name": "Bloodmaster's Ring",
+      "side": 2,
+      "zoneID": 16591,
+      "zone": "Riverglades",
+      "minLevel": 36,
+      "group": true,
+      "details": "Complete the Bloodmaster's Ring chain at Bolder'ok, defeat Chub'chob in the ring, and report to Clugfist to choose one reward.",
+      "rewards": {
+        "275043": "Bloodmaster's Ring",
+        "275044": "Bloodsport Band",
+        "275045": "Ogre Horn Ring"
+      }
+    },
+    {
+      "questID": 95267,
+      "name": "The Monster Surfaces",
+      "side": 0,
+      "zoneID": 16591,
+      "zone": "Riverglades",
+      "minLevel": 38,
+      "group": false,
+      "details": "Meet Argo Brinewhistle. Use the Big Ball o' Bait at fresh wreckage by the murloc islands, then bring the sea monster's head back to Argo.",
+      "rewards": {
+        "274948": "Bottle of Powderfuse Port"
+      }
+    },
+    {
+      "questID": 95534,
+      "name": "Strahnbrad Mystery",
+      "side": 0,
+      "zoneID": 36,
+      "zone": "Alterac Mountains",
+      "minLevel": 25,
+      "group": false,
+      "details": "Start from the Singed Note. Investigate the bellows in Strahnbrad, then report to your faction's contact in Hillsbrad Foothills.",
+      "rewards": {
+        "277206": "Brilliant Cloak"
+      }
+    },
+    {
+      "questID": 95991,
+      "name": "WANTED: Ghostmaw",
+      "side": 1,
+      "zoneID": 16591,
+      "zone": "Riverglades",
+      "minLevel": 38,
+      "group": true,
+      "details": "Check the wanted poster at Farholde Keep. Bring Ghostmaw's Fang back to Wheatley.",
+      "rewards": {
+        "274962": "Crocskin Waders"
+      }
+    },
+    {
+      "questID": 95992,
+      "name": "WANTED: Ghostmaw",
+      "side": 2,
+      "zoneID": 16591,
+      "zone": "Riverglades",
+      "minLevel": 38,
+      "group": true,
+      "details": "Check the wanted poster at Rog'mar. Bring Ghostmaw's Fang back to Tan'jani.",
+      "rewards": {
+        "274962": "Crocskin Waders"
+      }
+    },
+    {
+      "questID": 98025,
+      "name": "WANTED: Jai'vhanel",
+      "side": 1,
+      "zoneID": 148,
+      "zone": "Darkshore",
+      "minLevel": 10,
+      "group": false,
+      "details": "Find Jai'vhanel north of Ameth'Aran and bring her feather to Sentinel Glynda Nal'Shea in Auberdine. Choose the knife at turn-in.",
+      "rewards": {
+        "287062": "Darnassian Knife"
+      }
+    },
+    {
+      "questID": 98028,
+      "name": "Baron Marinous",
+      "side": 1,
+      "zoneID": 148,
+      "zone": "Darkshore",
+      "minLevel": 17,
+      "group": true,
+      "details": "Collect 20 Mathystral Amulet Fragments from Stormscale naga at the Ruins of Mathystra. Use the restored amulet at the Fathom Stone to summon Baron Marinous (level 21 elite). Bring the Clouded Water Globe he drops to Onu at the Grove of the Ancients.",
+      "rewards": {
+        "281291": "Mathystra Channeling Orb",
+        "281292": "Onu's Patience"
+      }
+    },
+    {
+      "questID": 98093,
+      "name": "Field to Clear",
+      "side": 2,
+      "zoneID": 17,
+      "zone": "The Barrens",
+      "minLevel": 18,
+      "group": false,
+      "details": "Speak to Sulhasa in the southern Barrens, clear the Stormhides and Hecklefang Stalkers, then choose the knife at turn-in.",
+      "rewards": {
+        "287064": "Beastculler's Knife"
+      }
+    }
+  ],
+  "foreverStats": {
+    "270078": {
+      "equipment": "17 42 0 2 2 10 agi11 sta11 dmin60 dmax90 speed2400",
+      "evidence": [
+        "https://foreverdb.net/item/270078",
+        "https://endgametools.com/en/wow-forever/items/270078"
+      ]
+    },
+    "270081": {
+      "equipment": "11 44 0 3 4 0 int12 sp5",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=270081/purified-ring",
+        "https://endgametools.com/en/wow-forever/items/270081"
+      ]
+    },
+    "270115": {
+      "equipment": "7 55 0 3 4 2 armor138 agi16 sta18 def8",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=270115/leggings-of-freedom-and-sorrow",
+        "https://wowforever.wclbox.com/en/wupin/270115"
+      ]
+    },
+    "270117": {
+      "equipment": "1 54 0 3 4 2 armor126 agi18 sta12 int12 def7",
+      "evidence": [
+        "https://endgametools.com/en/wow-forever/items/270117",
+        "https://www.60.tools/items/270117-shapeshifters-helm"
+      ]
+    },
+    "270120": {
+      "equipment": "8 55 0 3 4 3 armor225 agi14 int12 spi11",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=270120/boots-of-requite",
+        "https://endgametools.com/en/wow-forever/items/270120"
+      ]
+    },
+    "274948": {
+      "equipment": "21 42 0 2 2 15 int7 sp21 heal63 dmin20 dmax38 speed1800",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=274948/bottle-of-powderfuse-port",
+        "https://bindonforever.com/item/274948"
+      ]
+    },
+    "274962": {
+      "equipment": "7 42 0 2 4 2 armor148 str8 sta11 spi6",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=274962/crocskin-waders",
+        "https://zephras.com/forever/enUS/item/274962/"
+      ]
+    },
+    "275021": {
+      "equipment": "10 44 0 3 4 1 armor40 spi12 sp15 heal15",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275021/prisoner-handwraps",
+        "https://pd.zroot.it/forever/items/275021"
+      ]
+    },
+    "275023": {
+      "equipment": "7 44 0 3 4 1 armor56 spi13 sp9 heal26",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275023/bolderok-loincloth",
+        "https://zephras.com/forever/enUS/item/275023/"
+      ]
+    },
+    "275025": {
+      "equipment": "13 44 0 3 2 4 str10 sta4 dmin54 dmax101 speed2600",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275025/dunstons-ogre-duster",
+        "https://foreverdb.net/item/275025"
+      ]
+    },
+    "275043": {
+      "equipment": "11 45 0 3 4 0 sta7 int6 sp9 heal9",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275043/bloodmasters-ring",
+        "https://endgametools.com/en/wow-forever/items/275043"
+      ]
+    },
+    "275044": {
+      "equipment": "11 45 0 3 4 0 sta6 ap22 hpr5",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275044/bloodsport-band",
+        "https://endgametools.com/en/wow-forever/items/275044"
+      ]
+    },
+    "275045": {
+      "equipment": "11 45 0 3 4 0 str4 agi3 sta10 def3",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=275045/ogre-horn-ring",
+        "https://foreverdb.net/item/275045"
+      ]
+    },
+    "281291": {
+      "equipment": "23 21 17 3 4 0 sta3 int5",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=281291/mathystra-channeling-orb",
+        "https://wow4ever.quest/en/items/281291-mathystra-channeling-orb"
+      ]
+    },
+    "281292": {
+      "equipment": "23 21 17 3 4 0 sta3 spi5",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=281292/onus-patience",
+        "https://wow4ever.quest/en/items/281292-onus-patience"
+      ]
+    },
+    "287062": {
+      "equipment": "25 14 0 2 2 16 agi1 dmin7 dmax14 speed1600",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=287062/darnassian-knife",
+        "https://wow-forever.gg/db/items/287062-darnassian-knife/"
+      ]
+    },
+    "287064": {
+      "equipment": "25 23 0 2 2 16 agi1 dmin11 dmax22 speed1600",
+      "evidence": [
+        "https://www.wowhead.com/forever/item=287064/beastcullers-knife",
+        "https://forever-xp.com/items/287064/"
+      ]
+    }
+  }
+}

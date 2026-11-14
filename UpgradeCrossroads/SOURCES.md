@@ -18,18 +18,19 @@ included. The generator is original to Upgrade Crossroads.
 The upstream `Items.lua` contains facts from Blizzard Classic Era client
 build 1.15.9.70576, not a promise of Forever equivalence. Equipment with no
 Forever override remains explicitly marked `classic` in the catalog and UI.
-There are 2,149 Forever override records and 1,380 Classic baseline records.
-An override is a historical dataset entry, not a fresh observation on your realm.
-All 3,529 admitted records have a name, equipment data and at least one source.
+There are 2,149 historical Forever overrides, 15 additional reviewed Forever
+stat records, and 1,407 Classic baseline records. All 3,571 admitted records
+have a name, equipment data and at least one source. The in-game tooltip is
+the reference for exact stats on your realm.
 
-The source data contains 2,002 quest-source associations, 411 dungeon-source
+The source data contains 2,048 quest-source associations, 411 dungeon-source
 associations, and 1,321 crafting-source associations. Several items have more
 than one source. These are associations, not distinct item counts. No vendor,
 auction, raid or reputation catalog coverage is claimed in this first build;
 personal targets support those source types.
 
-Quest faction, race, class and minimum-level requirements come from that
-snapshot. Full prerequisite chains and source coordinates are not included
+Most quest faction, race, class and minimum-level requirements come from the
+historical snapshot. Full prerequisite chains and source coordinates are not included
 in Catalog.lua. Optional runtime QuestieDB reads can add known prerequisite
 links and giver/spawn locations. See its public API:
 https://github.com/Questie/QuestieDB/blob/master/docs/api.md
@@ -41,6 +42,41 @@ Item names, icons and tooltips displayed in the live client use its own item
 API when loaded. Known equipped items are scored against the same snapshot as
 the candidate catalog to avoid mixing rating scales. Unknown equipped items
 can use supported client base stats; incomplete comparisons are labeled.
+
+# Reviewed Forever quest rewards
+
+`research/live_quest_rewards.json` adds 42 items with 46 reward associations.
+It also updates two existing Baron Marinous off-hands in Darkshore and
+Brilliant Cloak in Alterac Mountains. Quest IDs, names, reward IDs and minimum
+levels, and recorded reward item names come from
+Efficient Games EG Link, CC BY 4.0, build 1.60.1.70888, collected November
+10–12, 2026:
+
+- https://github.com/JIVESCORP/eg-link-output-wowf/tree/164bd1e2d89579ada4ee5e2de7e5fd4db684a9f1/data/wowf/1.60.1.70888
+- `quests.enUS.json` and `item_hotfixes.enUS.json`
+
+Crossroads selects a small subset, uses its own dungeon identifiers, and
+checks group and faction eligibility against these quest references:
+
+- Scarlet Monastery: https://www.warcrafttavern.com/forever/guides/scarlet-monastery-quests/
+- Razorfen Downs: https://www.warcrafttavern.com/forever/guides/razorfen-downs-quests/
+- Sunken Temple: https://www.warcrafttavern.com/forever/guides/sunken-temple-quests/
+- Uldaman: https://senseos.gg/wiki/wow-forever/quests/2240/the-hidden-chamber/
+- Zul'Farrak: https://theforeverera.com/en/dungeons/zulfarrak/
+- Blackrock Depths: https://forever-tavern.com/dungeons/blackrock-depths/
+- Darkshore: https://bindonforever.com/quest/98028 and https://warcraft.wiki.gg/wiki/Befouled_Water_Globe_(Forever)
+- Riverglades: https://infinitysims.org/quests/riverglades/, https://ahledger.com/wow-forever/quests/94927-dunston-checks-out, https://www.forever-xp.com/quests/95063/, and https://warcraft.wiki.gg/wiki/The_Monster_Surfaces
+- Alterac Mountains: https://www.forever-xp.com/quests/95534/ and https://db.icy-veins.com/wow-forever/quests/95534
+- Darkshore bounty and Barrens hunt: https://guide.wow4ever.se/en/quests/98025 and https://www.forever-xp.com/quests/98093/
+
+Seventeen rewards use equipment values cross-checked against the two published
+Forever references recorded for each item. Those references also identify
+rewards missing from the observed item-name cache. Brilliant Cloak keeps its
+historical Forever stat record. The remaining 27 items use the pinned Classic
+Era stat baseline. Snapshot `defense` is the flat Defense listed on gear and
+is normalized to the tank model's existing `def` weight. The overlay has its
+own acquisition build and date in `CatalogMeta`. The October 13 date
+continues to identify the underlying historical catalog.
 
 # API reference
 
@@ -95,6 +131,8 @@ The generator now validates reviewed source hashes from research/source-lock.jso
 and reads the actual upstream generated snapshot date. tools/refresh_source.py
 can stage an explicitly reviewed commit/date before a rebuild. A newer commit
 with the same old snapshot is not presented as new game data.
+`tools/audit_catalog.py` reports reviewed reward coverage per destination and
+lists the quest IDs still missing a named destination.
 
 # Class/spec profile design (v0.5.3)
 
@@ -140,8 +178,7 @@ or appropriate for every build. Weapon DPS contributes only in each selected
 playstyle's designated attack slots; this avoids scoring ranged Hunter melee
 stat sticks as if they were the Hunter's shot weapon.
 
-These changes do not refresh Catalog.lua: its underlying snapshot remains
-2026-10-13 with the Forever/Classic coverage limitations recorded above.
+These profile changes used the underlying 2026-10-13 snapshot described above.
 
 # Crafting recipe acquisition
 

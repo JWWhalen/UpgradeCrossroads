@@ -200,18 +200,19 @@ function N.Signature(result,itemID)
     if p then key=key..":"..p.mapID..":"..p.x..":"..p.y end
     return key
 end
-function N.ReleaseOwnedWaypoint()
+function N.ReleaseOwnedWaypoint(owner)
+    if owner and owner~=N.pointOwner then return end
     local own=N.lastPoint
     local current=C_Map and safe(C_Map.GetUserWaypoint)
     if own and current and current.position and current.position.GetXY then
         local x,y=current.position:GetXY()
         if current.uiMapID==own.mapID and x and y and math.abs(x-own.x/100)<.00001 and math.abs(y-own.y/100)<.00001 then
-            if C_Map.ClearUserWaypoint then C_Map.ClearUserWaypoint() end
+            safe(C_Map.ClearUserWaypoint)
         end
     end
-    N.lastPoint=nil
+    N.lastPoint=nil; N.pointOwner=nil
 end
-function N.Apply(result,showMap)
+function N.Apply(result,showMap,owner)
     if InCombatLockdown() then return false,"Navigation changes are available after combat." end
     local p=result.point
     if result.status=="quest" and result.questID then
@@ -221,9 +222,9 @@ function N.Apply(result,showMap)
     end
     if p and N.ValidPoint(p) and C_Map and C_Map.SetUserWaypoint and UiMapPoint then
         if C_Map.CanSetUserWaypointOnMap and not safe(C_Map.CanSetUserWaypointOnMap,p.mapID) then return false,"The client does not allow a waypoint on this map." end
-        local ok=pcall(C_Map.SetUserWaypoint,UiMapPoint.CreateFromCoordinates(p.mapID,p.x/100,p.y/100))
-        if not ok then return false,"The client could not set this waypoint." end
-        N.lastPoint=copy(p)
+        local ok,wasSet=pcall(C_Map.SetUserWaypoint,UiMapPoint.CreateFromCoordinates(p.mapID,p.x/100,p.y/100))
+        if not ok or wasSet==false then return false,"The client could not set this waypoint." end
+        N.lastPoint=copy(p); N.pointOwner=owner
         if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then C_SuperTrack.SetSuperTrackedUserWaypoint(true) end
         if showMap then
             if OpenWorldMap then OpenWorldMap(p.mapID)

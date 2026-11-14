@@ -41,8 +41,6 @@ function XC:ApplyAppearance()
     for _,f in ipairs(W.windows) do W.SetWindowScale(f,self:ClampWindowScale(f:GetScale())); f:SaveGeometry() end
     if self.context then self:Render() end
     if self.guide and self.db.activeHunt then self:RenderGuide() end
-    if self.window then self:LayoutPages() end
-    if self.appearanceWindow then self:SyncAppearance() end
 end
 function XC:PickAppearanceColor(key)
     local a=self:Appearance(); local colorKey=key=="background" and "bg" or key=="accent" and "gold" or "border"
@@ -51,7 +49,11 @@ function XC:PickAppearanceColor(key)
         if loader then pcall(loader,"Blizzard_ColorPicker") end
     end
     local picker=ColorPickerFrame
-    if not picker then self.appearanceWindow.status:SetText("Enter six HEX digits, then press Enter to apply."); return end
+    if not picker then
+        self.appearanceWindow.status:SetText("Enter six hex digits, then press Enter to apply.")
+        self.appearanceWindow:ApplyLayout()
+        return
+    end
     local old=a[key]; local color=self.Colors[colorKey]
     local function changed()
         local r,g,b=picker:GetColorRGB(); a[key]=self.ColorHex({r,g,b}); self:ApplyAppearance()
@@ -64,84 +66,251 @@ function XC:PickAppearanceColor(key)
         picker:SetColorRGB(color[1],color[2],color[3]); picker:Show()
     end
 end
+local sections={{"appearance","Appearance"},{"hints","Gear hints"},{"weights","Stat weights"}}
+local colorFields={{"background","Background tint"},{"accent","Heading color"},{"border","Border color"}}
+
+local function placeText(text,width,x,y)
+    text:SetWidth(width)
+    text:SetHeight(0)
+    local height=text:GetStringHeight()
+    text:SetHeight(height)
+    W.Place(text,x,y)
+    return y+height
+end
+
+local function scaleControl(parent,name,minimum,maximum,callback)
+    local slider=CreateFrame("Slider",name,parent,"OptionsSliderTemplate")
+    slider:SetHeight(18)
+    slider:SetMinMaxValues(minimum,maximum)
+    slider:SetValueStep(5)
+    if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
+    slider:SetScript("OnValueChanged",callback)
+    return slider
+end
+
 function XC:BuildAppearance()
     if self.appearanceWindow then return end
     self:BuildUI()
     local f=W.Page(self.window,"appearance"); self.appearanceWindow=f
+    f.sectionButtons={}
+    f.section="appearance"
+    for _,section in ipairs(sections) do
+        local id,label=section[1],section[2]
+        f.sectionButtons[id]=W.Row(f,label,108,29,function() self:SelectAppearanceSection(id) end)
+    end
+    f.divider=W.Bar(f,self.Colors.border,200,1)
     f.scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate")
-    f.scroll:SetPoint("TOPLEFT",0,-10); f.scroll:SetPoint("BOTTOMRIGHT",-26,10)
-    local body=CreateFrame("Frame",nil,f.scroll); body:SetSize(644,600); f.scroll:SetScrollChild(body); f.content=body
-    W.Place(W.Text(body,"Window style",13,self.Colors.gold),28,8)
-    f.preset=W.Place(W.Button(body,"",240,30,function()
-        local a=self:Appearance(); local index=1
-        for i,id in ipairs(self.ThemeOrder) do if id==a.theme then index=i end end
-        a.theme=self.ThemeOrder[index%#self.ThemeOrder+1]; a.background=nil; a.accent=nil; a.border=nil; self:ApplyAppearance()
-    end),28,31)
-    W.Place(W.Text(body,"Font",13,self.Colors.gold),330,8)
-    f.font=W.Place(W.Button(body,"",280,30,function() local a=self:Appearance(); a.font=a.font=="classic" and "plain" or "classic"; a.fontChosen=true; self:ApplyAppearance() end),330,31)
-    f.opacityLabel=W.Place(W.Text(body,"",13,self.Colors.gold),28,81)
-    local slider=CreateFrame("Slider","UpgradeCrossroadsOpacitySlider",body,"OptionsSliderTemplate"); f.opacity=slider
-    W.Place(slider,36,112); slider:SetSize(566,18); slider:SetMinMaxValues(0,100); slider:SetValueStep(5)
-    if slider.SetObeyStepOnDrag then slider:SetObeyStepOnDrag(true) end
-    local low=slider.Low or _G.UpgradeCrossroadsOpacitySliderLow
-    local high=slider.High or _G.UpgradeCrossroadsOpacitySliderHigh
-    if low then low:SetText("Transparent"); W.RegisterFont(low,slider,11,self.Colors.muted) end
-    if high then high:SetText("Opaque"); W.RegisterFont(high,slider,11,self.Colors.muted) end
-    slider:SetScript("OnValueChanged",function(_,value) if not f.syncing then self:Appearance().opacity=value/100; self:ApplyAppearance() end end)
+    f.scroll:SetPoint("BOTTOMRIGHT",-26,10)
+    local body=CreateFrame("Frame",nil,f.scroll)
+    body:SetSize(644,1); f.scroll:SetScrollChild(body); f.content=body
+
+    f.views={}
+    for _,section in ipairs(sections) do
+        local view=CreateFrame("Frame",nil,body)
+        view:SetPoint("TOPLEFT",0,0)
+        f.views[section[1]]=view
+    end
+
+    local appearance=f.views.appearance
+    f.colorHeading=W.Text(appearance,"Window colors",15,self.Colors.gold,nil,true)
+    f.presets={}
+    for _,id in ipairs(self.ThemeOrder) do
+        f.presets[id]=W.Row(appearance,self.Themes[id].label,90,28,function()
+            local a=self:Appearance()
+            if a.theme==id and not (a.background or a.accent or a.border) then return end
+            a.theme=id; a.background=nil; a.accent=nil; a.border=nil
+            f.status:SetText("")
+            self:ApplyAppearance()
+        end)
+    end
+    f.opacityLabel=W.Text(appearance,"",13,self.Colors.text)
+    f.opacity=scaleControl(appearance,"UpgradeCrossroadsOpacitySlider",0,100,function(_,value)
+        if not f.syncing then self:Appearance().opacity=value/100; self:ApplyAppearance() end
+    end)
+    W.Hint(f.opacity,"Adjust the frame and panel backgrounds. Text and buttons stay opaque.")
     f.colorFields={}
-    for i,entry in ipairs({{"background","Background tint"},{"accent","Accent / headings"},{"border","Frame border"}}) do
-        local key,label=entry[1],entry[2]; local y=165+(i-1)*46
-        W.Place(W.Text(body,label,13,self.Colors.text),28,y+7)
-        local choose=W.Place(W.Button(body,"Choose color",132,30,function() self:PickAppearanceColor(key) end),230,y)
-        local hex=W.Place(W.Input(body,106,30),378,y); hex.edit:SetMaxLetters(7)
-        local swatch=W.Bar(body,self.Colors.gold,28,28); W.Place(swatch,505,y+1)
+    for _,entry in ipairs(colorFields) do
+        local key,label=entry[1],entry[2]
+        local choose=W.Button(appearance,"Choose color",120,29,function() self:PickAppearanceColor(key) end)
+        local hex=W.Input(appearance,88,29); hex.edit:SetMaxLetters(7)
+        W.Hint(hex.edit,"Type a six-digit hex color and press Enter to apply.")
+        local swatch=W.Bar(appearance,self.Colors.gold,25,25)
         hex.edit:SetScript("OnEnterPressed",function(edit)
             local _,value=self.ParseHex(edit:GetText())
-            if not value then f.status:SetText("Use six HEX digits, for example CCAE69."); return end
-            self:Appearance()[key]=value; edit:ClearFocus(); f.status:SetText("Appearance saved."); self:ApplyAppearance()
+            if not value then
+                f.status:SetText("Enter six hex digits, such as CCAE69.")
+                f:ApplyLayout()
+                return
+            end
+            self:Appearance()[key]=value
+            edit:ClearFocus()
+            f.status:SetText(label.." saved.")
+            self:ApplyAppearance()
         end)
-        f.colorFields[key]={input=hex,swatch=swatch,choose=choose,y=y}
+        f.colorFields[key]={input=hex,swatch=swatch,choose=choose,label=W.Text(appearance,label,13,self.Colors.text)}
     end
-    f.readable=W.Place(W.Toggle(body,"Readable scaling",function(v) self:Appearance().readable=v; self:ApplyAppearance() end),25,315)
-    f.textSize=W.Place(W.Button(body,"",280,28,function() local a=self:Appearance(); a.textBoost=(a.textBoost+1)%3; self:ApplyAppearance() end),330,315)
-    f.outline=W.Place(W.Toggle(body,"Text outline",function(v) self:Appearance().outline=v; self:ApplyAppearance() end),25,355)
-    f.info=W.Place(W.Text(body,"Keep labels readable while shrinking the window. Shift-drag the corner to change layout space without shrinking text. Turn this off only if you prefer very small UI.",12,self.Colors.muted,580),28,398)
-    f.status=W.Place(W.Text(body,"Background opacity changes panels only; text and controls stay opaque.",12,self.Colors.muted,580),28,474); f.status:SetHeight(36)
-    f.scaleLabel=W.Place(W.Text(body,"",13,self.Colors.text),28,430)
-    f.scaleSlider=CreateFrame("Slider","UpgradeCrossroadsScaleSlider",body,"OptionsSliderTemplate")
-    W.Place(f.scaleSlider,36,464); f.scaleSlider:SetSize(566,18); f.scaleSlider:SetMinMaxValues(80,150); f.scaleSlider:SetValueStep(5)
-    if f.scaleSlider.SetObeyStepOnDrag then f.scaleSlider:SetObeyStepOnDrag(true) end
-    f.scaleSlider:SetScript("OnValueChanged",function(_,value)
+    f.status=W.Text(appearance,"",12,self.Colors.muted,330)
+    f.textHeading=W.Text(appearance,"Text and size",15,self.Colors.gold,nil,true)
+    f.font=W.Button(appearance,"",220,29,function()
+        local a=self:Appearance()
+        a.font=a.font=="classic" and "plain" or "classic"; a.fontChosen=true
+        self:ApplyAppearance()
+    end)
+    f.textSize=W.Button(appearance,"",220,29,function()
+        local a=self:Appearance(); a.textBoost=(a.textBoost+1)%3; self:ApplyAppearance()
+    end)
+    f.readable=W.Toggle(appearance,"Readable scaling",function(v) self:Appearance().readable=v; self:ApplyAppearance() end)
+    W.Hint(f.readable,"Keep the text readable when shrinking the window.")
+    f.outline=W.Toggle(appearance,"Text outline",function(v) self:Appearance().outline=v; self:ApplyAppearance() end)
+    f.scaleLabel=W.Text(appearance,"",13,self.Colors.text)
+    f.scaleSlider=scaleControl(appearance,"UpgradeCrossroadsScaleSlider",80,150,function(_,value)
         if not f.syncing then W.SetWindowScale(self.window,self:ClampWindowScale(value/100)); self.window:SaveGeometry() end
     end)
-    f.reset=W.Place(W.Button(body,"Restore appearance",200,30,function() self.db.appearance={}; self:ApplyAppearance() end),28,600)
-    f.Layout=function(_,width)
-        body:SetWidth(width-28)
-        for _,field in pairs(f.colorFields) do
-            local x=math.max(378,230+field.choose:GetWidth()+16)
-            W.Place(field.input,x,field.y); W.Place(field.swatch,x+122,field.y+1)
+    f.info=W.Text(appearance,"Drag the lower-right corner to scale the whole window. Shift-drag it to resize the layout.",12,self.Colors.muted,330)
+    f.reset=W.Button(appearance,"Restore appearance",174,29,function()
+        self.db.appearance={}
+        f.status:SetText("")
+        self:ApplyAppearance()
+    end)
+
+    local hints=f.views.hints
+    f.upgradeTooltips=W.Toggle(hints,"Compare gear in item tooltips",function(checked)
+        self.db.options.upgradeTooltips=checked
+        self:RefreshUpgradeHints()
+    end)
+    f.tooltipHelp=W.Text(hints,"See the equipped comparison and catalog rank where available. Uses your active spec.",13,self.Colors.muted,420)
+    f.bagUpgrades=W.Toggle(hints,"Show upgrade markers",function(checked)
+        self.db.options.bagUpgrades=checked
+        self:RefreshUpgradeHints()
+    end)
+    f.bagHelp=W.Text(hints,"A green marker flags upgrades in Blizzard bags and on quest rewards.",13,self.Colors.muted,420)
+    f.statWeights=self:BuildStatWeightControls(f.views.weights)
+
+    function appearance:Layout(width)
+        local column=math.floor((width-60)/2)
+        local left,right=16,column+44
+        local colorsY=placeText(f.colorHeading,column,left,10)+12
+        local styleWidth=math.floor((column-8)/2)
+        for i,id in ipairs(XC.ThemeOrder) do
+            local preset=f.presets[id]
+            W.ResizeButton(preset,styleWidth)
+            preset:SetHeight(math.max(28,preset.label:GetStringHeight()+5))
+            W.Place(preset,left+(i-1)%2*(styleWidth+8),colorsY+math.floor((i-1)/2)*(preset:GetHeight()+3))
         end
-        f.info:SetWidth(width-100); f.info:SetHeight(0); local h=f.info:GetStringHeight(); f.info:SetHeight(h)
-        f.status:SetWidth(width-100); f.status:SetHeight(0); local sh=f.status:GetStringHeight(); f.status:SetHeight(sh)
-        W.Place(f.scaleLabel,28,416+h); W.Place(f.scaleSlider,36,448+h); W.Place(f.status,28,494+h); W.Place(f.reset,28,510+h+sh); body:SetHeight(555+h+sh)
+        colorsY=colorsY+f.presets.classic:GetHeight()*2+18
+        colorsY=placeText(f.opacityLabel,column,left,colorsY)+7
+        f.opacity:SetWidth(column-18); W.Place(f.opacity,left+9,colorsY)
+        colorsY=colorsY+32
+        for _,entry in ipairs(colorFields) do
+            local field=f.colorFields[entry[1]]
+            colorsY=placeText(field.label,column,left,colorsY)+4
+            W.FitButton(field.choose)
+            local inputX=left+field.choose:GetWidth()+16
+            W.Place(field.choose,left,colorsY)
+            W.Place(field.input,inputX,colorsY)
+            W.Place(field.swatch,inputX+field.input:GetWidth()+11,colorsY+2)
+            colorsY=colorsY+math.max(field.choose:GetHeight(),field.input:GetHeight())+10
+        end
+        if f.status:GetText()~="" then
+            colorsY=placeText(f.status,column,left,colorsY)+10
+        end
+
+        local textY=placeText(f.textHeading,column,right,10)+12
+        for _,button in ipairs({f.font,f.textSize}) do
+            W.FitButton(button,column)
+            W.Place(button,right,textY)
+            textY=textY+button:GetHeight()+7
+        end
+        for _,check in ipairs({f.readable,f.outline}) do
+            local rowHeight=math.max(check:GetHeight(),check.label:GetStringHeight()+4)
+            W.Place(check,right,textY+(rowHeight-check:GetHeight())*.5)
+            textY=textY+rowHeight+6
+        end
+        textY=placeText(f.scaleLabel,column,right,textY+8)+7
+        f.scaleSlider:SetWidth(column-18); W.Place(f.scaleSlider,right+9,textY)
+        textY=placeText(f.info,column,right,textY+32)
+
+        local resetY=math.max(colorsY,textY)+8
+        W.FitButton(f.reset)
+        W.Place(f.reset,left,resetY)
+        self:SetHeight(resetY+f.reset:GetHeight()+10)
+    end
+    function hints:Layout(width)
+        local y=10
+        for _,row in ipairs({{f.upgradeTooltips,f.tooltipHelp},{f.bagUpgrades,f.bagHelp}}) do
+            local check,description=unpack(row)
+            local rowHeight=math.max(check:GetHeight(),check.label:GetStringHeight()+4)
+            W.Place(check,16,y+(rowHeight-check:GetHeight())*.5)
+            y=placeText(description,math.min(580,width-58),42,y+rowHeight+2)+19
+        end
+        self:SetHeight(y)
+    end
+    function f.views.weights:Layout(width)
+        W.Place(f.statWeights,16,10)
+        f.statWeights:Layout(width-32)
+        self:SetHeight(f.statWeights:GetHeight()+20)
+    end
+    function f:Layout(width)
+        local x,y,rowHeight=16,0,29
+        for _,section in ipairs(sections) do
+            local button=self.sectionButtons[section[1]]
+            button.label:SetWidth(0)
+            W.ResizeButton(button,math.max(108,button.label:GetStringWidth()+23))
+            button:SetHeight(math.max(29,button.label:GetStringHeight()+8))
+            rowHeight=math.max(rowHeight,button:GetHeight())
+            W.Place(button,x,y)
+            x=x+button:GetWidth()+6
+        end
+        self.divider:SetWidth(width-32); W.Place(self.divider,16,rowHeight+6)
+        self.scroll:SetPoint("TOPLEFT",0,-rowHeight-15)
+        body:SetWidth(width-28)
+        for id,view in pairs(self.views) do view:SetShown(id==self.section) end
+        local view=self.views[self.section]
+        view:SetWidth(body:GetWidth())
+        view:Layout(view:GetWidth())
+        body:SetHeight(view:GetHeight())
     end
 end
+
+function XC:SelectAppearanceSection(section)
+    local f=self.appearanceWindow
+    if not f or not f.views[section] then return end
+    if f.section~=section then
+        if f.section=="weights" then f.statWeights:ClearEditFocus() end
+        if f.section=="appearance" then
+            for _,field in pairs(f.colorFields) do field.input.edit:ClearFocus() end
+        end
+        f.section=section
+        f.scroll:SetVerticalScroll(0)
+    end
+    self:SyncAppearance()
+    f:ApplyLayout()
+end
+
 function XC:SyncAppearance()
-    local f=self.appearanceWindow; if not f then return end
+    local f=self.appearanceWindow; if not f or f.syncing then return end
     local a=self:Appearance(); f.syncing=true
-    f.preset.label:SetText(self.Themes[a.theme].label.."  >")
-    f.font.label:SetText(a.font=="classic" and "WoW standard font  >" or "Plain readable font  >")
+    for id,button in pairs(f.sectionButtons) do W.SelectRow(button,id==f.section) end
+    for id,button in pairs(f.presets) do W.SelectRow(button,id==a.theme) end
+    f.font.label:SetText(a.font=="classic" and "Font: WoW standard  >" or "Font: Plain  >")
     f.opacityLabel:SetText("Background opacity: "..math.floor(a.opacity*100+.5).."%")
     f.opacity:SetValue(a.opacity*100)
     f.readable:SetChecked(a.readable); f.outline:SetChecked(a.outline)
-    f.textSize.label:SetText(({"Text size: Normal  >","Text size: Larger  >","Text size: Largest  >"})[a.textBoost+1])
+    f.upgradeTooltips:SetChecked(self.db.options.upgradeTooltips)
+    f.bagUpgrades:SetChecked(self.db.options.bagUpgrades)
+    f.statWeights:Sync()
+    f.textSize.label:SetText(("Text size: %s  >"):format(({"Normal","Larger","Largest"})[a.textBoost+1]))
     for key,field in pairs(f.colorFields) do
         local color=self.Colors[key=="background" and "bg" or key=="accent" and "gold" or "border"]
         if not field.input.edit:HasFocus() then field.input.edit:SetText(self.ColorHex(color)) end
         field.swatch:SetColorTexture(unpack(color))
     end
-    f.scaleLabel:SetText("Window scale: "..math.floor(self.window:GetScale()*100+.5).."%")
+    f.scaleLabel:SetText("Planner scale: "..math.floor(self.window:GetScale()*100+.5).."%")
     f.scaleSlider:SetMinMaxValues(a.readable and 80 or 50,150); f.scaleSlider:SetValue(self.window:GetScale()*100)
     f.syncing=nil
 end
-function XC:ShowAppearance() self:ShowPage("appearance") end
+
+function XC:ShowAppearance(section)
+    self:ShowPage("appearance")
+    if section then self:SelectAppearanceSection(section) end
+end

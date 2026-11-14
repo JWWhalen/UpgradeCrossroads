@@ -4,36 +4,45 @@ XC.Client=C
 local statMap={ITEM_MOD_STRENGTH_SHORT="str",ITEM_MOD_AGILITY_SHORT="agi",ITEM_MOD_STAMINA_SHORT="sta",ITEM_MOD_INTELLECT_SHORT="int",ITEM_MOD_SPIRIT_SHORT="spi",ITEM_MOD_SPELL_POWER_SHORT="sp",ITEM_MOD_SPELL_DAMAGE_DONE_SHORT="sp",ITEM_MOD_SPELL_HEALING_DONE_SHORT="heal",ITEM_MOD_ATTACK_POWER_SHORT="ap",ITEM_MOD_RANGED_ATTACK_POWER_SHORT="rap",RESISTANCE0_NAME="armor",ITEM_MOD_DEFENSE_SKILL_RATING_SHORT="def",ITEM_MOD_DAMAGE_PER_SECOND_SHORT="dps",ITEM_MOD_MANA_REGENERATION_SHORT="mpr"}
 local ratingKeys={ITEM_MOD_CRIT_RATING_SHORT=true,ITEM_MOD_HIT_RATING_SHORT=true,ITEM_MOD_HASTE_RATING_SHORT=true,ITEM_MOD_DODGE_RATING_SHORT=true,ITEM_MOD_PARRY_RATING_SHORT=true}
 local invMap={INVTYPE_HEAD=1,INVTYPE_NECK=2,INVTYPE_SHOULDER=3,INVTYPE_BODY=4,INVTYPE_CHEST=5,INVTYPE_WAIST=6,INVTYPE_LEGS=7,INVTYPE_FEET=8,INVTYPE_WRIST=9,INVTYPE_HAND=10,INVTYPE_FINGER=11,INVTYPE_TRINKET=12,INVTYPE_WEAPON=13,INVTYPE_SHIELD=14,INVTYPE_RANGED=15,INVTYPE_CLOAK=16,INVTYPE_2HWEAPON=17,INVTYPE_ROBE=20,INVTYPE_WEAPONMAINHAND=21,INVTYPE_WEAPONOFFHAND=22,INVTYPE_HOLDABLE=23,INVTYPE_THROWN=25,INVTYPE_RANGEDRIGHT=26,INVTYPE_RELIC=28}
+local function successful(ok,...)
+    if ok then return ... end
+end
 local function safe(fn,...)
     if type(fn)~="function" then return nil end
-    local values={pcall(fn,...)}
-    if not values[1] then return nil end
-    return unpack(values,2)
+    return successful(pcall(fn,...))
 end
 C.Safe=safe
 function C.ItemInfo(link)
     return safe(C_Item and C_Item.GetItemInfo or GetItemInfo,link)
 end
-function C.ItemStats(link)
+function C.ItemStats(link,exact)
     local raw=safe(C_Item and C_Item.GetItemStats or GetItemStats,link)
     if type(raw)~="table" then return nil end
     local stats={}
     local unsupported=false
     for key,value in pairs(raw) do
-        if statMap[key] and type(value)=="number" then stats[statMap[key]]=value end
-        if ratingKeys[key] and type(value)=="number" and value~=0 then unsupported=true end
+        local defenseRating=exact and key=="ITEM_MOD_DEFENSE_SKILL_RATING_SHORT"
+        if statMap[key] and not defenseRating and type(value)=="number" then stats[statMap[key]]=value end
+        if (ratingKeys[key] or defenseRating) and type(value)=="number" and value~=0 then unsupported=true end
     end
     -- Ratings and procs are deliberately not converted to percent or guessed.
     return stats,unsupported
 end
-function C.ResolveItem(id)
-    local name,link,quality,ilvl,req,_,_,_,equip,icon,_,classID,subclassID=C.ItemInfo(id)
+function C.ResolveItem(id,exactLink)
+    local name,link,quality,ilvl,req,_,_,_,equip,icon,_,classID,subclassID=C.ItemInfo(exactLink or id)
     if not name then return nil end
-    local stats,unsupported=C.ItemStats(link or id)
+    link=exactLink or link
+    local stats,unsupported=C.ItemStats(link or id,exactLink~=nil)
     local entry={id=id,name=name,link=link,quality=quality or 1,ilvl=ilvl or 0,req=req or 0,inv=invMap[equip] or 0,icon=icon,classID=classID,subclassID=subclassID,stats=stats,basis="live",sources={}}
-    if classID==2 and (not stats or not stats.dps) then entry.incomplete=true end
+    if classID==2 and (not stats or not stats.dps) then
+        entry.incomplete=true
+        entry.missingDps=true
+    end
     if not stats then entry.incomplete=true end
-    if unsupported then entry.incomplete=true end
+    if unsupported then
+        entry.incomplete=true
+        entry.unsupportedRatings=true
+    end
     return entry
 end
 function C.RequestItem(id)
@@ -42,21 +51,28 @@ function C.RequestItem(id)
     XC.requested[id]=true
     safe(C_Item and C_Item.RequestLoadItemDataByID,id)
 end
-function C.Context()
+function C.Context(exactInventory)
     local _,class,classID=UnitClass("player")
     local _,_,raceID=UnitRace("player")
     local faction=UnitFactionGroup("player")
     local side=faction=="Alliance" and 1 or (faction=="Horde" and 2 or 0)
     local ctx={class=class,classID=classID,raceID=raceID,side=side,level=UnitLevel("player"),equipped={},occupied={},worn={},completed={}}
+    if exactInventory then ctx.equippedIDs={} end
     for _,slot in ipairs(XC.Slots) do
         local link=GetInventoryItemLink("player",slot.id)
         local id=safe(GetInventoryItemID,"player",slot.id)
         if link then id=id or tonumber(link:match("item:(%d+)")) end
         if id then
             ctx.worn[id]=true; ctx.occupied[slot.id]=true
-            local entry=C.ResolveItem(id)
+            local entry
+            if not exactInventory or link then entry=C.ResolveItem(id,exactInventory and link or nil) end
             local snap=XC.Catalog[id]
-            if entry and entry.stats then
+            if exactInventory then
+                ctx.equippedIDs[slot.id]=id
+                if entry and (entry.inv==0 or not entry.classID or not entry.subclassID) then entry=nil end
+                ctx.equipped[slot.id]=entry
+                if not entry or not entry.stats then C.RequestItem(id) end
+            elseif entry and entry.stats then
                 -- Use the same dated model on both sides when the catalog knows
                 -- the equipped item; mixing live rating units with old percent
                 -- weights would create false upgrade deltas.
@@ -116,7 +132,9 @@ end
 function XC:SourceText(source)
     local text
     if source.personal then text="Personal "..(self.KindLabels[source.kind] or "target")..": "..source.name.."\n"..(source.zone or "")
-    elseif source.kind=="quest" then text="Quest: "..source.name.."\n"..(source.zone or "").."  /  #"..tostring(source.questID)
+    elseif source.kind=="quest" then
+        text="Quest: "..source.name.."\n"..(source.zone or "").."  /  #"..tostring(source.questID)
+        if source.details then text=text.."\n"..source.details end
     elseif source.kind=="craft" then
         local recipe=self:GetRecipeSource(source)
         text=source.name or "Crafting"
@@ -148,10 +166,9 @@ end
 function XC:Pin(row,lane)
     local key=tostring(row.item.id)
     if not self.db.pins[key] then
-        self.db.pinOrder=self.db.pinOrder+1
-        self.db.pins[key]={item=row.item,source=row.source,lane=lane,addedAt=time(),order=self.db.pinOrder,checks={},notes=""}
-        self:Print("Pinned "..row.item.name..". Open My hunts for your checklist.")
-    else self:Print("That target is already in My hunts.") end
+        self:EnsureHunt(row,lane)
+        self:Print("Saved "..row.item.name.." to Hunts.")
+    else self:Print("That target is already in Hunts.") end
     C.UpdatePins()
     self:Refresh()
 end
@@ -159,8 +176,9 @@ function XC:SetProfile(id)
     local profile=self:GetProfile(id)
     if profile.id~=id then return false end
     self.db.profile=id
-    self.selection={}; self.sourceSelection={}
+    self.journalSourceSelection=nil
     self:Refresh()
+    self:RefreshUpgradeHints()
     return true
 end
 function XC:CycleProfile()
@@ -177,19 +195,7 @@ function XC:Refresh()
     if not self.Rules.FactionLabels[self.db.options.faction] and self.context.side~=0 then
         self.db.options.faction=self.Rules.FactionMode(self.db.options,self.context)
     end
-    self.lanes,self.baseline,self.baselineScore=self.Rules.Build(C.Catalog(),self.context,self.db.options,self:GetSlot(self.db.slot),self:GetProfile(self.db.profile))
-    local query=(self.search or ""):lower():match("^%s*(.-)%s*$")
-    if query~="" then
-        for key,rows in pairs(self.lanes) do
-            local matches={}
-            for _,row in ipairs(rows) do
-                local text=(row.item.name or "").." "..self:SourceText(row.source)
-                if text:lower():find(query,1,true) then matches[#matches+1]=row end
-            end
-            self.lanes[key]=matches
-        end
-    end
-    if self.Render then self:Render() end
+    self:Render()
 end
 function XC:QueueRefresh()
     if self.queued then return end
@@ -200,6 +206,7 @@ function XC:QueueRefresh()
             C.UpdatePins()
             if XC.window and XC.window:IsShown() then XC:Refresh() end
             if XC.RenderGuide then XC:RenderGuide() end
+            XC:RefreshUpgradeHints()
         end
     end)
 end

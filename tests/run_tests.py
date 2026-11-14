@@ -51,16 +51,173 @@ FireEvent("ADDON_LOADED","UpgradeCrossroads")
 assert(XC.db.profile=="warrior_arms" and XC.db.slot==16)
 assert(XC.db.schema==6 and XC:Appearance().font=="classic")
 assert(type(SlashCmdList.UPGRADECROSSROADS)=="function")
-assert(XC.CatalogMeta.count==3529)
+assert(XC.CatalogMeta.count==3571)
+assert(XC.CatalogMeta.liveQuestCount==22 and XC.CatalogMeta.liveQuestRewardLinks==49)
+local ring=XC.Catalog[270081]
+assert(ring.basis=="forever" and ring.stats.int==12 and ring.stats.sp==5)
+assert(#ring.sources==2 and ring.sources[1].side==2 and ring.sources[2].side==1)
+local orb=XC.Catalog[281291]
+assert(orb.stats.int==5 and orb.stats.sta==3 and orb.inv==23)
+assert(orb.sources[1].questID==98028 and orb.sources[1].side==1)
+assert(XC:SourceText(orb.sources[1]):find("20 Mathystral Amulet Fragments",1,true))
+assert(XC.db.options.upgradeTooltips and XC.db.options.bagUpgrades)
+''')
+test('gear hints compare exact items and refresh native bags with the planner closed', '''
+local head={name="Starter Helm",quality=2,ilvl=20,req=10,equip="INVTYPE_HEAD",classID=4,subclassID=1}
+ItemInfo[990001]=head; head.stats={ITEM_MOD_STRENGTH_SHORT=5}
+ItemInfo[990002]={name="Better Helm",quality=2,ilvl=20,req=10,equip=head.equip,classID=4,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=10}}
+ItemInfo[990003]={name="Future Helm",quality=2,ilvl=40,req=40,equip=head.equip,classID=4,subclassID=1,stats={ITEM_MOD_STRENGTH_SHORT=20}}
+local previous=FakeInventory[1]; FakeInventory[1]=990001
+local engine=XC.UpgradeComparison
+local result=engine.Evaluate("item:990002")
+assert(result.status=="upgrade" and result.slotID==1 and result.delta==5 and result.percent==100)
+result=engine.Evaluate("item:990003")
+assert(result.status=="future" and result.minimumLevel==40 and result.delta==nil)
+assert(engine.Evaluate("item:990001",nil,nil,1).status=="equipped")
+assert(engine.Evaluate("|Hspell:42|h[Spell]|h")==nil)
+local lines={}
+local previousAddLine=GameTooltip.AddLine
+GameTooltip.AddLine=function(_,line) lines[#lines+1]=line end
+Enum={TooltipDataType={Item=0}}
+local callback,calls
+calls=0
+TooltipDataProcessor={AddTooltipPostCall=function(_,fn) callback=fn; calls=calls+1 end}
+local bag=CreateFrame("Frame",nil,UIParent)
+local button=CreateFrame("Button",nil,bag)
+button.GetBagID=function() return 0 end
+button.GetID=function() return 1 end
+bag.EnumerateValidItems=function() return ipairs({button}) end
+ContainerFrameUtil_EnumerateBagFrames=function() return ipairs({bag}) end
+local link="item:990002"
+C_Container={GetContainerItemLink=function() return link end}
+XC:RefreshUpgradeHints()
+assert(callback and calls==1 and not XC.window)
+callback(GameTooltip,{hyperlink=link})
+assert(#lines>=2 and lines[2]:find("+100.0% upgrade",1,true))
+local marker=Frames[#Frames]
+assert(marker:GetParent()==button and marker:IsShown())
+FakeInventory[1]=990002
+FireEvent("PLAYER_EQUIPMENT_CHANGED",1); FlushTimers()
+assert(not marker:IsShown() and calls==1)
+XC.db.options.upgradeTooltips=false; lines={}
+callback(GameTooltip,{hyperlink=link}); assert(#lines==0)
+XC.db.options.upgradeTooltips=true
+FakeInventory[1]=previous
+GameTooltip.AddLine=previousAddLine
+ContainerFrameUtil_EnumerateBagFrames=nil; C_Container=nil; bag:Hide()
+ItemInfo[990001]=nil; ItemInfo[990002]=nil; ItemInfo[990003]=nil
+XC:RefreshUpgradeHints()
+''')
+test('catalog rank uses eligible current-level sources and the model score', '''
+local catalog=XC.Catalog
+local context={level=25,side=1,class="WARRIOR",classID=1,raceID=1,completed={}}
+local profile=XC:GetProfile(XC.db.profile)
+local function helm(id,str,source)
+    return {id=id,inv=1,classID=4,subclassID=1,stats={str=str},sources={source}}
+end
+local available={kind="quest",questID=900000,side=1,minLevel=20}
+XC.Catalog={
+    [1]=helm(1,10,available), [2]=helm(2,20,available),
+    [3]=helm(3,30,{kind="quest",questID=900003,side=2}),
+    [4]=helm(4,40,{kind="quest",questID=900004,side=1,minLevel=35}),
+    [5]=helm(5,20,available),
+}
+local result={status="upgrade",item=XC.Catalog[1],slotID=1,score=10}
+local rank,best,count=XC:CatalogRank(result,context,profile)
+assert(rank==3 and best==20 and count==3)
+for _,id in ipairs({2,5}) do
+    assert(XC:CatalogRank({status="upgrade",item=XC.Catalog[id],slotID=1,score=20},context,profile)==1)
+end
+result.item={id=1,inv=1,randomSuffix=true}
+assert(XC:CatalogRank(result,context,profile)==nil)
+result.item=XC.Catalog[1]
+result.score=11
+assert(XC:CatalogRank(result,context,profile)==nil)
+XC.Catalog=catalog
+''')
+test('live comparisons handle two ring slots and withhold incomplete results', '''
+local slots=FakeInventory
+local item=function(name,value)
+    return {name=name,quality=2,ilvl=20,req=10,equip="INVTYPE_FINGER",classID=4,subclassID=0,
+        stats={ITEM_MOD_STRENGTH_SHORT=value}}
+end
+ItemInfo[990011]=item("Better worn ring",20)
+ItemInfo[990012]=item("Weaker worn ring",5)
+ItemInfo[990013]=item("Candidate ring",10)
+FakeInventory={[11]=990011,[12]=990012}
+local compare=XC.UpgradeComparison
+local result=compare.Evaluate("item:990013")
+assert(result.status=="upgrade" and result.slotID==12 and result.delta==5)
+ItemInfo[990013].stats.ITEM_MOD_HIT_RATING_SHORT=10
+result=compare.Evaluate("item:990013")
+assert(result.status=="incomplete" and result.delta==nil)
+ItemInfo[990013].stats.ITEM_MOD_HIT_RATING_SHORT=nil
+FakeInventory[12]=990014
+result=compare.Evaluate("item:990013")
+assert(result.status=="incomplete" and result.delta==nil)
+FakeInventory=slots
+for id=990011,990013 do ItemInfo[id]=nil end
+XC:InvalidateUpgradeHints()
+''')
+test('native quest rewards reuse live upgrade markers', (ROOT/'tests/quest_rewards_tests.lua').read_text())
+test('weapon DPS fallback retains live stats and excludes mismatched item variants', '''
+local equipped=FakeInventory
+local candidate,baseline=999101,999102
+local function sword(name,stats)
+    return {name=name,quality=2,ilvl=25,req=1,equip="INVTYPE_WEAPONMAINHAND",classID=2,subclassID=7,stats=stats}
+end
+ItemInfo[candidate]=sword("New sword",{ITEM_MOD_STRENGTH_SHORT=5})
+ItemInfo[baseline]=sword("Old sword",{ITEM_MOD_STRENGTH_SHORT=20,ITEM_MOD_DAMAGE_PER_SECOND_SHORT=3})
+local item={id=candidate,inv=21,ilvl=25,classID=2,subclassID=7,stats={str=90,dps=5},basis="forever"}
+XC.Catalog[candidate]=item
+XC.Catalog[baseline]={id=baseline,inv=21,ilvl=25,classID=2,subclassID=7,stats={str=1,dps=6},basis="forever"}
+FakeInventory={[16]=baseline}
+local engine=XC.UpgradeComparison
+local profile={weights={str=1,dps=5},weaponDpsSlots={[16]=true}}
+local result=engine.Evaluate("item:"..candidate,nil,profile)
+assert(result.basis=="forever" and result.score==30 and result.baseline==35 and result.status=="downgrade")
+item.ilvl=26
+assert(engine.Evaluate("item:"..candidate,nil,profile).status=="incomplete")
+item.ilvl=25
+assert(engine.Evaluate("item:"..candidate.."::::::-42",nil,profile).status=="incomplete")
+FakeInventory=equipped
+XC.Catalog[candidate],XC.Catalog[baseline]=nil,nil
+ItemInfo[candidate],ItemInfo[baseline]=nil,nil
+XC:InvalidateUpgradeHints()
 ''')
 test('complete native UI opens with catalog recommendations', '''
 SlashCmdList.UPGRADECROSSROADS("")
 assert(XC.window:IsShown())
-assert(XC.window.activePage=="gear" and XC.window.journal:IsShown() and not XC.window.pages.compare:IsShown())
+assert(XC.window.activePage=="gear" and XC.window.journal:IsShown() and not XC.window.pages.compare)
 assert(not XC.window.nav.compare, "Journal is the only visible gear-browsing tab")
-assert(#XC.lanes.reliable>0 and #XC.lanes.dungeon>0 and #XC.lanes.longterm>0)
-assert(XC.window.lanes.reliable.name.text~="")
+assert(#XC.window.journal.entries>0 and XC.window.journal.selectedRow)
+assert(not XC.lanes and not XC.window.lanes)
 for _,record in ipairs(XC.W.fonts) do assert(record.object.fontPath=="Fonts\\\\FRIZQT__.TTF") end
+''')
+test('settings save spec weights atomically and independently toggle gear hints', '''
+local profile=XC:GetProfile(XC.db.profile)
+local old=XC.db.weights[profile.id]
+XC:ShowAppearance("weights")
+local settings=XC.appearanceWindow
+local editor=settings.statWeights
+editor.fields.str.edit:SetText("2.5")
+editor.save.scripts.OnClick()
+assert(XC:GetProfile(profile.id).weights.str==2.5 and editor.status.text:find("Saved",1,true))
+local saved=XC.db.weights[profile.id]
+editor.fields.str.edit:SetText("9"); editor.fields.agi.edit:SetText("bogus")
+editor.save.scripts.OnClick()
+assert(XC.db.weights[profile.id]==saved and editor.status.text:find("Invalid weight",1,true))
+editor.reset.scripts.OnClick()
+assert(not XC.db.weights[profile.id] and editor.status.text:find("Restored",1,true))
+XC:ShowAppearance("hints")
+settings.bagUpgrades:SetChecked(false)
+settings.bagUpgrades.scripts.OnClick(settings.bagUpgrades)
+assert(XC.db.options.bagUpgrades==false and XC.db.options.upgradeTooltips==true)
+settings.bagUpgrades:SetChecked(true)
+settings.bagUpgrades.scripts.OnClick(settings.bagUpgrades)
+XC.db.weights[profile.id]=old
+XC:SelectAppearanceSection("appearance")
+XC:ShowPage("gear"); XC:Refresh()
 ''')
 test('close button is outside the title drag region and closes without Escape', '''
 local f=XC.window; local drag=f.dragHandle; local close=f.closeButton
@@ -104,13 +261,18 @@ assert(not R.SourceAllowed({kind="auction"},c,o))
 ''')
 test('solo and crafting preferences actually remove candidates', '''
 XC.db.options.solo=true; XC.db.options.crafted=false; XC:Refresh()
-assert(#XC.lanes.dungeon==0)
-for _,lane in pairs(XC.lanes) do for _,row in ipairs(lane) do assert(row.source.kind~="dungeon" and row.source.kind~="raid" and row.source.kind~="craft" and not row.source.group) end end
+assert(#XC:GetJournalEntries("active","",0,"dungeon")==0)
+for _,row in ipairs(XC:GetJournalEntries("active","",0,"all")) do
+    assert(row.source.kind~="dungeon" and row.source.kind~="raid" and row.source.kind~="craft" and not row.source.group)
+end
 XC.db.options.solo=false; XC.db.options.crafted=true; XC:Refresh()
 ''')
 test('future gear stays out of current paths', '''
-for _,key in ipairs({"reliable","dungeon"}) do for _,row in ipairs(XC.lanes[key]) do assert(row.minLevel<=MockLevel) end end
-local future=false; for _,r in ipairs(XC.lanes.longterm) do if r.minLevel>MockLevel then future=true end end
+for _,key in ipairs({"reliable","dungeon"}) do
+    for _,row in ipairs(XC:GetJournalEntries("active","",0,key)) do assert(row.minLevel<=MockLevel) end
+end
+local future=false
+for _,r in ipairs(XC:GetJournalEntries("active","",0,"longterm")) do if r.minLevel>MockLevel then future=true end end
 assert(future)
 ''')
 test('class armor filtering and future armor training', '''
@@ -143,12 +305,12 @@ rows=XC.Rules.Build({item},c,XC.db.options,XC:GetSlot(1),XC:GetProfile("melee"))
 ''')
 test('pending equipped item does not become an empty zero-score slot', '''
 FakeInventory[16]=999999; XC:Refresh()
-assert(XC.context.occupied[16] and XC.baselineScore==nil)
-assert(XC.lanes.reliable[1].delta==nil)
+local entries=XC:GetJournalEntries("active","",16,"reliable")
+assert(XC.context.occupied[16] and entries[1] and entries[1].delta==nil)
 FakeInventory[16]=nil; XC:Refresh()
 ''')
 test('pinning is idempotent and checklists render', '''
-local r=XC.lanes.dungeon[1]; PinnedID=r.item.id
+local r=XC:GetJournalEntries("active","",16,"dungeon")[1]; PinnedID=r.item.id
 XC:Pin(r,"dungeon"); XC:Pin(r,"dungeon")
 local n=0; for _ in pairs(XC.db.pins) do n=n+1 end; assert(n==1)
 XC:ShowHunts(); assert(XC.huntWindow.rows[1].pin.item.id==PinnedID)
@@ -178,6 +340,25 @@ f.x.edit:SetText("42"); XC:SavePersonalTarget(); assert(not f:IsShown() and XC.d
 assert(XC.db.pins["872"].source.personal)
 XC:MapTarget(XC.db.pins["872"].source); assert(LastWaypoint.x==.42 and LastWaypoint.y==.30)
 ''')
+test('personal source editor captures the current map position without saving prematurely', """
+XC:ShowTargetEditor()
+local f=XC.editor
+local best,position=C_Map.GetBestMapForUnit,C_Map.GetPlayerMapPosition
+C_Map.GetBestMapForUnit=function(unit) assert(unit=="player"); return 1436 end
+C_Map.GetPlayerMapPosition=function(id,unit)
+    assert(id==1436 and unit=="player")
+    return {GetXY=function() return .425,.712 end}
+end
+local pins=XC.db.pins
+f.useCurrent.scripts.OnClick()
+assert(f.mapID.edit:GetText()=="1436" and f.x.edit:GetText()=="42.50" and f.y.edit:GetText()=="71.20")
+assert(f.status.text:find("Westfall",1,true) and XC.db.pins==pins and f:IsShown())
+C_Map.GetPlayerMapPosition=function() end
+f.useCurrent.scripts.OnClick()
+assert(f.status.text:find("unavailable",1,true) and f.x.edit:GetText()=="42.50")
+C_Map.GetBestMapForUnit,C_Map.GetPlayerMapPosition=best,position
+f.cancel.scripts.OnClick()
+""")
 test('personal quest sources without IDs remain safe', '''
 assert(XC:SourceText({kind="quest",name="Personal quest",zone="Test",personal=true}):find("Personal"))
 assert(XC:Availability({locked=false,source={kind="quest"}}):find("Check"))
@@ -192,7 +373,10 @@ test('item events coalesce and UI handles empty recommendations', '''
 FireEvent("BAG_UPDATE_DELAYED"); FireEvent("PLAYER_EQUIPMENT_CHANGED"); assert(#Timers>=1)
 FlushTimers()
 XC.db.options.solo=true; XC:Refresh()
-assert(XC.window.lanes.dungeon.name.text:find("No matching dungeon"))
+XC:ShowPage("gear"); local p=XC.window.journal
+local prior=XC.db.journalUI.lane; XC.db.journalUI.lane="dungeon"; XC:RenderJournal()
+assert(#p.entries==0 and p.empty:IsShown())
+XC.db.journalUI.lane=prior
 XC.db.options.solo=false
 ''')
 test('modern item data load event refreshes requested item presentation', '''
@@ -205,8 +389,8 @@ test('unsupported live rating units cannot create a false comparison', '''
 ItemInfo[900010]={name="Test helm",quality=2,ilvl=25,req=20,equip="INVTYPE_HEAD",classID=4,subclassID=3,stats={ITEM_MOD_STRENGTH_SHORT=4,ITEM_MOD_CRIT_RATING_SHORT=8}}
 local i=XC.Client.ResolveItem(900010)
 assert(i.incomplete and i.stats.str==4 and not i.stats.crit)
-FakeInventory[1]=900010; XC.db.slot=1; XC:Refresh()
-for _,r in ipairs(XC.lanes.reliable) do assert(r.delta==nil) end
+FakeInventory[1]=900010; XC:Refresh()
+for _,r in ipairs(XC:GetJournalEntries("active","",1,"reliable")) do assert(r.delta==nil) end
 FakeInventory[1]=nil; ItemInfo[900010]=nil; XC.db.slot=16; XC:Refresh()
 ''')
 test('all nine classes, every slot and profile generate valid results', '''
@@ -230,20 +414,14 @@ end
 ''')
 
 test('clicking the displayed item starts a persistent guide directly', '''
-XC.db.pins={}; XC.db.activeHunt=nil; XC.db.custom={}; XC.db.slot=16; XC:Refresh(); XC.editor:Hide(); XC.huntWindow:Hide()
-XC.window.lanes.dungeon.itemButton.scripts.OnClick()
+XC.db.pins={}; XC.db.activeHunt=nil; XC.db.custom={}
+XC.db.journalUI.state="active"; XC.db.journalUI.lane="dungeon"
+XC:ShowPage("gear"); XC:SetJournalSlot(16)
+local p=XC.window.journal
+p.rewardButton.scripts.OnClick(p.rewardButton,"LeftButton")
 assert(XC.db.activeHunt and XC.guide:IsShown() and not XC.editor:IsShown() and not XC.huntWindow:IsShown())
-XC.window:Hide(); assert(XC.guide:IsShown())
 FireEvent("ADDON_LOADED","UpgradeCrossroads"); assert(XC.guide:IsShown())
-XC.window:Show()
-local row=XC:DisplayRow("dungeon")
-if row.source.questID then
- ActiveQuests[row.source.questID]=true; XC:Render()
- assert(XC.window.lanes.dungeon.pin.label.text=="Track + map")
- XC.window.lanes.dungeon.pin.scripts.OnClick()
- assert(QuestDetailsOpened==row.source.questID)
- ActiveQuests[row.source.questID]=nil
-end
+XC.db.journalUI.lane="all"
 ''')
 test('card map action pins a labeled outdoor entrance and opens its map', '''
 local item=XC.Catalog[872]
@@ -331,14 +509,16 @@ r=XC.Navigation.Resolve({kind="quest",questID=900101,name="Reward quest"}); asse
 ProviderQuests[900100].preQuestSingle=nil
 ''')
 test('source selection is inline and tracking can change sources without duplication', '''
-local item={id=900301,name="Two source item",sources={{kind="dungeon",name="First boss",mapID=1429,x=20,y=30},{kind="dungeon",name="Second boss",mapID=1429,x=50,y=60}}}
-XC.db.pins={}; XC.lanes={reliable={},longterm={},dungeon={{item=item,source=item.sources[1],score=100,delta=100}}}; XC.selection={dungeon=1}; XC.sourceSelection={}
-local row=XC:DisplayRow("dungeon"); assert(row.sourceCount==2)
+local item={id=900301,name="Two source item",inv=1,classID=4,subclassID=1,stats={str=100},sources={{kind="dungeon",name="First boss",mapID=1429,x=20,y=30},{kind="dungeon",name="Second boss",mapID=1429,x=50,y=60}}}
+XC.db.pins={}; XC.db.custom[item.id]=item; XC:Refresh()
+local function current() return XC:GetJournalEntries("active",item.name,1,"dungeon")[1] end
+local row=current(); assert(row.sourceCount==2)
 XC:TrackItem(row,"dungeon",false)
-XC:CycleCardSource("dungeon"); row=XC:DisplayRow("dungeon"); assert(row.source.name=="Second boss")
+assert(XC:SetJournalSource(row,2)); row=current(); assert(row.source.name=="Second boss")
 XC:TrackItem(row,"dungeon",true)
 local n=0; for _ in pairs(XC.db.pins) do n=n+1 end
 assert(n==1 and XC.db.pins["900301"].source.name=="Second boss" and LastWaypoint.x==.5)
+XC.db.custom[item.id]=nil
 ''')
 test('context location editor preselects the item and updates only its source', '''
 local pin=XC.db.pins[XC.db.activeHunt]
@@ -388,13 +568,14 @@ XC.db.trackerHidden=nil
 """)
 
 test('gear detail pane reflows within the shared page host', """
-local f=XC.window; f:SetSize(900,720); local before=f.lanes.reliable.width
-f:SetSize(1300,900); assert(f.lanes.reliable.width>before)
+XC:ShowPage("gear")
+local f=XC.window; local p=f.journal
+f:SetSize(900,720); local before=p.paper.width
+f:SetSize(1300,900); assert(p.paper.width>before)
 assert(f.pageHost.width==f.width-36)
 for _,page in pairs(f.pages) do assert(page.width==f.pageHost.width and page.height==f.pageHost.height) end
-local c=f.lanes.reliable
-assert(c.point[2]+c.width<=f.gearPage.width)
-assert(c.pin.width+c.chat.width+10<=c.width-284)
+assert(p.paper.point[2]+p.paper.width<=p.width)
+assert(p.body.width<p.paper.width and p.chat.point[2]+p.chat.width<p.paper.width)
 """)
 
 test('main shell geometry saves and restores independently of page selection', """
@@ -406,7 +587,7 @@ assert(XC.db.windows.planner.position.x==90 and XC.db.windows.planner.position.y
 """)
 
 test('settings scale slider changes the shared shell and keeps tracker scale', """
-XC:ShowAppearance(); local f=XC.appearanceWindow; local tracker=XC.guide:GetScale()
+XC:ShowAppearance("appearance"); local f=XC.appearanceWindow; local tracker=XC.guide:GetScale()
 f.scaleSlider:SetValue(90)
 assert(math.abs(XC.window:GetScale()-.9)<.001 and XC.guide:GetScale()==tracker)
 assert(XC.db.windows.planner.scale==XC.window:GetScale())
@@ -447,27 +628,34 @@ ChatFrameUtil=nil; assert(not XC:LinkItem(XC.Catalog[872]))
 ChatEdit_GetActiveWindow=get; ChatEdit_InsertLink=insert; ChatFrame_OpenChat=open
 """)
 test('right-click and shift-click link items while control-click previews', """
-XC:ShowPage("gear"); XC.db.slot=16; XC.search=""; XC:Refresh()
-local row=XC:DisplayRow("reliable"); local item=row.item
+XC.db.journalUI.state="active"; XC.db.journalUI.lane="reliable"
+XC:ShowPage("gear"); XC:SetJournalSlot(16)
+local p=XC.window.journal; p.clear.scripts.OnClick()
+local row=p.selectedRow; local item=row.item
 ItemInfo[item.id]={name=item.name,quality=2,equip="INVTYPE_WEAPON",classID=2,subclassID=7,stats={}}
-local b=XC.window.lanes.reliable.itemButton; local active=XC.db.activeHunt
+local b=p.rewardButton; local active=XC.db.activeHunt
 ChatDraft=""; ChatActive=true; b.scripts.OnClick(b,"RightButton")
 assert(ChatDraft=="item:"..item.id and XC.db.activeHunt==active)
 MockShift=true; b.scripts.OnClick(b,"LeftButton"); MockShift=false
 assert(ChatDraft=="item:"..item.id.."item:"..item.id and XC.db.activeHunt==active)
 MockControl=true; b.scripts.OnClick(b,"LeftButton"); MockControl=false
 assert(PreviewedLink=="item:"..item.id and XC.db.activeHunt==active and ChatSent==0)
-XC.window.lanes.reliable.chat.scripts.OnClick(); assert(ChatSent==0)
+p.chat.scripts.OnClick(); assert(ChatSent==0)
 ItemInfo[item.id]=nil
 """)
 test('search filters item and source names without changing saved hunts', """
 local count=0; for _ in pairs(XC.db.pins) do count=count+1 end
-local function query(q) XC.window.search.edit:SetText(q); XC.window.search.edit.scripts.OnTextChanged(XC.window.search.edit,true) end
-query("zzzz_unmatched_%["); for _,rows in pairs(XC.lanes) do assert(#rows==0) end
-assert(XC.window.lanes.reliable.name.text:find("No matches"))
-query("blacksmithing"); assert(#XC.lanes.longterm>0)
-for _,rows in pairs(XC.lanes) do for _,row in ipairs(rows) do assert(XC:SourceText(row.source):lower():find("blacksmithing",1,true)) end end
-XC.window.clearSearch.scripts.OnClick(); assert(#XC.lanes.reliable>0)
+local p=XC.window.journal; XC.db.journalUI.lane="longterm"; XC:RenderJournal()
+local function query(q) p.search.edit:SetText(q); p.search.edit.scripts.OnTextChanged(p.search.edit,true) end
+query("zzzz_unmatched_%["); assert(#p.entries==0 and p.empty:IsShown())
+query("blacksmithing"); assert(#p.entries>0)
+for _,row in ipairs(p.entries) do
+    local found=false
+    for _,source in ipairs(row.sources) do if XC:SourceText(source):lower():find("blacksmithing",1,true) then found=true end end
+    assert(found)
+end
+p.clear.scripts.OnClick(); assert(#p.entries>0)
+XC.db.journalUI.lane="all"
 local after=0; for _ in pairs(XC.db.pins) do after=after+1 end; assert(after==count)
 """)
 test('hunts reflow notes and support obtained filtering and direct chat', """
@@ -485,6 +673,7 @@ pin.acquired=true; f.hideObtained:SetChecked(true); f.hideObtained.scripts.OnCli
 assert(not row:IsShown() or row.pin~=pin)
 f.hideObtained:SetChecked(false); f.hideObtained.scripts.OnClick(f.hideObtained); pin.acquired=nil
 """)
+test('hunt queue shares progress and scopes map ownership', (ROOT/'tests/hunts_polish_tests.lua').read_text())
 test('character panel remains free of addon launcher buttons', """
 assert(not XC.launcher)
 for _,f in ipairs(Frames) do assert(f.parent~=CharacterFrame) end
@@ -540,12 +729,13 @@ assert(f:GetParent()==XC.window.pageHost and not f.resizable and not f.closeButt
 f:Hide(); SlashCmdList.UPGRADECROSSROADS("appearance"); assert(f:IsShown()); f:Hide()
 """)
 test('preset and opacity controls update existing panels without fading text', """
-XC:ShowAppearance(); local f=XC.appearanceWindow; local old=XC.window
-f.preset.scripts.OnClick(); assert(XC.db.appearance.theme=="alliance" and XC.window==old)
+XC:ShowAppearance("appearance"); local f=XC.appearanceWindow; local old=XC.window
+f.presets.alliance.scripts.OnClick(); assert(XC.db.appearance.theme=="alliance" and XC.window==old)
 f.opacity:SetValue(25)
-assert(XC.window.bg[4]==.25 and XC.window.current.bg[4]==.25)
-assert(XC.window.lanes.reliable.name.color[4]~=0.25)
-assert(not XC.window.profile.backdrop and XC.window.border[4]==1)
+local p=XC.window.journal
+assert(XC.window.bg[4]==.25 and p.filters.bg[4]==.25)
+assert(p.heading.color[4]~=0.25)
+assert(not p.profile.backdrop and XC.window.border[4]==1)
 """)
 test('custom HEX colors validate atomically and color picker cancel restores them', """
 local f=XC.appearanceWindow; local edit=f.colorFields.accent.input.edit
@@ -576,19 +766,19 @@ end
 UIParent:SetScale(old); XC:ApplyAppearance()
 """)
 test('appearance can change fonts sizes outlines and restore without clearing hunts', """
-local f=XC.appearanceWindow; local pins=XC.db.pins
-assert(XC:Appearance().font=="classic" and XC.window.profile.label.fontPath:find("FRIZQT"))
+XC:ShowAppearance("appearance"); local f=XC.appearanceWindow; local pins=XC.db.pins
+assert(XC:Appearance().font=="classic" and XC.window.journal.profile.label.fontPath:find("FRIZQT"))
 local standard=STANDARD_TEXT_FONT
 STANDARD_TEXT_FONT="Fonts\\\\CLIENT_STANDARD.TTF"; XC:ApplyAppearance()
-assert(XC.window.profile.label.fontPath==STANDARD_TEXT_FONT and XC.window.journal.description.fontPath==STANDARD_TEXT_FONT)
+assert(XC.window.journal.profile.label.fontPath==STANDARD_TEXT_FONT and XC.window.journal.rewardName.fontPath==STANDARD_TEXT_FONT)
 STANDARD_TEXT_FONT=standard; XC:ApplyAppearance()
 f.font.scripts.OnClick(); assert(XC.db.appearance.font=="plain" and XC.db.appearance.fontChosen)
 FireEvent("ADDON_LOADED","UpgradeCrossroads")
-assert(XC:Appearance().font=="plain" and XC.window.profile.label.fontPath:find("ARIALN"))
+assert(XC:Appearance().font=="plain" and XC.window.journal.profile.label.fontPath:find("ARIALN"))
 f.textSize.scripts.OnClick(); assert(XC.db.appearance.textBoost==1)
 f.outline:SetChecked(false); f.outline.scripts.OnClick(f.outline)
-assert(XC.window.profile.label.fontPath:find("ARIALN") and XC.window.profile.label.fontFlags=="")
-f.font.scripts.OnClick(); assert(XC:Appearance().font=="classic" and XC.window.profile.label.fontPath:find("FRIZQT"))
+assert(XC.window.journal.profile.label.fontPath:find("ARIALN") and XC.window.journal.profile.label.fontFlags=="")
+f.font.scripts.OnClick(); assert(XC:Appearance().font=="classic" and XC.window.journal.profile.label.fontPath:find("FRIZQT"))
 f.reset.scripts.OnClick(); assert(XC:Appearance().theme=="classic" and XC:Appearance().font=="classic" and not XC:Appearance().outline and XC.db.pins==pins)
 f:Hide()
 """)
@@ -603,14 +793,14 @@ local button
 for _,b in ipairs(p.rows) do if b:IsShown() and b.label.text:find(selected.item.name,1,true) then button=b; break end end
 assert(button); button.scripts.OnClick(button,"LeftButton")
 assert(p.selectedRow.key==selected.key and XC.db.activeHunt==before)
-assert(p.title.text==selected.item.name and p.source.text~="")
+assert(p.rewardName.text==selected.item.name and p.source.text~="")
 p.track.scripts.OnClick(); assert(XC.db.activeHunt and XC.guide:IsShown())
 XC:ShowPage("gear"); XC.db.journalUI.lane="all"; XC:SetJournalSlot(0)
 XC.db.journalUI.filters=false; p:ApplyLayout()
 """)
 test('native framing and approved logo paths are used consistently', """
 assert(XC.window.backdrop.bgFile:find("WHITE8X8",1,true) and XC.window.bg[4]==1)
-assert(XC.window.profile.template:find("UIPanelButtonTemplate",1,true))
+assert(XC.window.journal.profile.template:find("UIPanelButtonTemplate",1,true))
 assert(XC.minimapButton.icon.texture:match("UpgradeCrossroads.+Media.+IconRound$"))
 assert(XC.window.headerIcon.texture:match("UpgradeCrossroads.+Media.+LogoRound$"))
 """)
@@ -632,7 +822,7 @@ for pass=1,4 do
  end
 end
 XC:ShowPage("compare")
-assert(root.activePage=="gear" and root.journal:IsShown() and not root.pages.compare:IsShown())
+assert(root.activePage=="gear" and root.journal:IsShown() and not root.pages.compare)
 assert(#Frames==count and root.toplevel and root.raised>0)
 """)
 test('native buttons use one measured label with no custom backdrop or tiny text chrome', """
@@ -681,7 +871,7 @@ db.appearance=prior; XC:ApplyAppearance()
 test('large text with global UI scaling keeps form and tracker controls apart', """
 local previous=UIParent:GetScale(); UIParent:SetScale(.75)
 XC:Appearance().textBoost=2; XC:ApplyAppearance(); XC.W.SetWindowScale(XC.window,.8)
-XC:ShowAppearance(); local f=XC.appearanceWindow
+XC:ShowAppearance("appearance"); local f=XC.appearanceWindow
 for _,field in pairs(f.colorFields) do
  assert(field.input.point[2]>=field.choose.point[2]+field.choose.width+15)
 end
@@ -704,8 +894,8 @@ assert(XC.db.pins["872"]==pin and pin.notes==notes)
 test('faction selector offers exactly Alliance Horde and Both with detected defaults', """
 local R=XC.Rules; assert(#R.FactionOrder==3 and not R.FactionLabels.player)
 assert(R.FactionMode({}, {side=1})=="alliance" and R.FactionMode({}, {side=2})=="horde")
-XC.db.options.faction=nil; MockFaction="Horde"; XC:Refresh()
-assert(XC.db.options.faction=="horde" and XC.window.faction.label.text:find("Horde"))
+XC.db.options.faction=nil; MockFaction="Horde"; XC:ShowPage("gear"); XC:Refresh()
+assert(XC.db.options.faction=="horde" and XC.window.journal.faction.label.text:find("Horde"))
 MockFaction="Alliance"; XC:SetFactionFilter("alliance")
 """)
 test('faction filtering applies to every tagged source and keeps shared sources', """
@@ -738,27 +928,29 @@ local id=900402
 local item={id=id,name="Faction test crown",inv=1,classID=4,subclassID=1,req=1,stats={str=999},sources={
  {kind="quest",name="Alliance reward",side=1,questID=900402},
  {kind="quest",name="Horde reward",side=2,raceMask=2,questID=900403}}}
-local slot=XC.db.slot; XC.db.slot=1; XC.db.custom[id]=item
-XC:SetFactionFilter("both"); local row=XC:DisplayRow("reliable")
+XC.db.custom[id]=item
+local function current() return XC:GetJournalEntries("active",item.name,1,"reliable")[1] end
+XC:SetFactionFilter("both"); local row=current()
 assert(row.item.id==id and row.sourceCount==2)
 local pin=XC:EnsureHunt(row,"reliable"); pin.notes="Keep these notes"; pin.checks[1]=true
-XC:CycleCardSource("reliable"); assert(XC:DisplayRow("reliable").source.side==2)
-XC:SetFactionFilter("alliance"); row=XC:DisplayRow("reliable"); assert(row.source.side==1 and row.sourceCount==1)
-XC:SetFactionFilter("horde"); row=XC:DisplayRow("reliable"); assert(row.source.side==2 and row.sourceCount==1)
+assert(XC:SetJournalSource(row,2)); assert(current().source.side==2)
+XC:SetFactionFilter("alliance"); row=current(); assert(row.source.side==1 and row.sourceCount==1)
+XC:SetFactionFilter("horde"); row=current(); assert(row.source.side==2 and row.sourceCount==1)
 assert(XC:Availability(row):find("not available") and XC:SourceText(row.source):find("Horde only"))
 assert(XC.db.pins[tostring(id)]==pin and pin.notes=="Keep these notes" and pin.checks[1])
-XC.db.custom[id]=nil; XC.db.pins[tostring(id)]=nil; XC.db.slot=slot; XC:SetFactionFilter("alliance")
+XC.db.custom[id]=nil; XC.db.pins[tostring(id)]=nil; XC:SetFactionFilter("alliance")
 """)
 test('faction button cycles three choices and its saved selection survives initialization', """
-XC:SetFactionFilter("alliance"); local b=XC.window.faction
+XC:SetFactionFilter("alliance"); local b=XC.window.journal.faction
 b.scripts.OnClick(); assert(XC.db.options.faction=="horde")
 b.scripts.OnClick(); assert(XC.db.options.faction=="both")
 FireEvent("ADDON_LOADED","UpgradeCrossroads"); assert(XC.db.options.faction=="both")
 b.scripts.OnClick(); assert(XC.db.options.faction=="alliance")
 local prior=UIParent:GetScale(); UIParent:SetScale(.75); XC:Appearance().textBoost=2; XC:ApplyAppearance(); XC.W.SetWindowScale(XC.window,.8)
-local last=XC.window.auction
-assert(b.point[2]>=last.point[2]+last.width+2+last.label:GetStringWidth()+8)
-assert(b.point[2]+b.width<=XC.window.gearPage.width-9)
+XC:ShowPage("gear"); local p=XC.window.journal; p:ApplyLayout()
+assert(b.point[2]>=p.lane.point[2]+p.lane.width+8)
+assert(p.solo.point[2]>=b.point[2]+b.width+8)
+assert(p.auction.point[2]+p.auction.width+p.auction.label:GetStringWidth()<=p.filters.width-8)
 UIParent:SetScale(prior); XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
 """)
 
@@ -816,13 +1008,13 @@ assert(#lanes.reliable==1 and lanes.reliable[1].delta==50)
 test('class selectors expose only the character specs and preserve independent custom weights', """
 local oldClass,oldID,oldProfile=MockClass,MockClassID,XC.db.profile
 local pin=XC.db.pins[tostring(PinnedID)]; local oldNote=pin and pin.notes
-MockClass="MAGE"; MockClassID=8; XC.db.profile="mage_frost"; XC:Refresh()
-assert(#XC:GetProfiles()==3 and XC.window.classLabel.text=="Mage")
-assert(XC.window.profile.label.text:find("Frost",1,true))
+MockClass="MAGE"; MockClassID=8; XC.db.profile="mage_frost"; XC:ShowPage("gear"); XC:Refresh()
+assert(#XC:GetProfiles()==3 and XC.window.journal.heading.text:find("Mage"))
+assert(XC.window.journal.profile.label.text:find("Frost",1,true))
 assert(not XC:SetProfile("hunter_marksmanship"))
 SlashCmdList.UPGRADECROSSROADS("weights int=4")
 assert(XC:GetProfile("mage_frost").weights.int==4)
-XC.window.profile.scripts.OnClick(); assert(XC.db.profile=="mage_arcane")
+XC.window.journal.profile.scripts.OnClick(); assert(XC.db.profile=="mage_arcane")
 assert(XC:GetProfile(XC.db.profile).weights.int==.6)
 SlashCmdList.UPGRADECROSSROADS("weights int=2")
 XC:SetProfile("mage_frost"); assert(XC:GetProfile(XC.db.profile).weights.int==4)
@@ -871,13 +1063,12 @@ test('long spec names remain within the shared page at minimum size and largest 
 local class,id,profile=MockClass,MockClassID,XC.db.profile
 MockClass="HUNTER"; MockClassID=3; XC.db.profile="hunter_survivalranged"; XC:Refresh()
 XC.window:SetSize(900,720); XC:Appearance().textBoost=2; XC:ApplyAppearance()
-local f=XC.window
-assert(f.classLabel.text=="Hunter" and f.profile.label.text:find("Survival (ranged)",1,true))
-assert(f.profile.point[3]==-40)
-assert(f.profile.point[2]+f.profile.width<f.gearPage.width-10)
-assert(f.profileBasis.point[2]+f.profileBasis.width<=f.gearPage.width-9)
-assert(f.current.point[3]==-87)
-assert(f.faction.point[2]>f.auction.point[2]+f.auction.width+f.auction.label:GetStringWidth()+10)
+XC:ShowPage("gear"); local p=XC.window.journal
+assert(p.heading.text:find("Hunter",1,true) and p.profile.label.text:find("Survival (ranged)",1,true))
+assert(p.profile.point[2]+p.profile.width<=p.filterButton.point[2]-8)
+assert(p.filterButton.point[2]+p.filterButton.width<=p.width-8)
+assert(p.heading.point[2]+p.heading.width<=p.profile.point[2])
+assert(-p.slotButton.point[3]>-p.profile.point[3]+p.profile.height)
 XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry()
 MockClass=class; MockClassID=id; XC.db.profile=profile; XC:Refresh()
 """)
@@ -909,12 +1100,15 @@ for id,item in pairs(JournalUICatalog) do ItemInfo[id]={name=item.name,quality=i
 XC.Client.Catalog=function() return JournalUICatalog end
 XC.window.journal.query=""; XC.window.journal.search.edit:SetText("")
 XC:ShowPage("gear"); XC:Refresh()
-local p=XC.window.journal; assert(p and p:IsShown() and not XC.window.pages.compare:IsShown())
+local p=XC.window.journal; assert(p and p:IsShown() and not XC.window.pages.compare)
 assert(p.left.surfaceKind=="list" and p.paper.surfaceKind=="parchment")
 assert(#p.entries==3 and p.entries[1].slotID==1 and p.entries[3].slotID==2)
+local linked=XC:GetJournalEntries('active','|cff0070dd|Hitem:991102:0:0|h[Localized name]|h|r',0,'all')
+assert(#linked==1 and linked[1].item.id==991102)
+assert(XC:GetJournalEntries('active','991101',0,'all')[1].item.id==991101)
 assert(p.rows[1].label.text:find("Head",1,true) and p.rows[4].label.text:find("Neck",1,true))
 local before=#Frames; p.rows[5].scripts.OnClick(p.rows[5],"LeftButton")
-assert(p.selectedRow.item.id==991103 and p.title.text=="Journal Pendant")
+assert(p.selectedRow.item.id==991103 and p.rewardName.text=="Journal Pendant")
 assert(XC.db.activeHunt==nil and not next(XC.db.pins) and #Frames==before)
 assert(p.track:GetParent()==p.paper and p.map:GetParent()==p.paper)
 ''')
@@ -990,7 +1184,7 @@ assert(not next(XC.db.pins))
 
 XC.db.options.crafted=false; XC:Refresh()
 assert(p.selectedRow.source.kind=="vendor" and not p.recipe:IsShown())
-assert(p.sourceChoice.width==p.paper.width-28)
+assert(not p.sourceChoice:IsShown() and p.sourceChoice.width==p.paper.width-28)
 p.search.edit:SetText("No such gear"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
 assert(not p.selectedRow and not p.recipe:IsShown() and not p.recipeOffset)
 
@@ -999,6 +1193,89 @@ XC.journalSourceSelection=priorSources; XC.db.options.crafted=priorCraft
 XC:Appearance().textBoost=boost; XC.window:SetSize(width,height); XC:ApplyAppearance()
 p.clear.scripts.OnClick()
 XC.db.journalUI.selected=priorSelection; XC:Refresh()
+''')
+test('journal destinations group quest rewards and dungeon drops with their eligible sources', '''
+local p=XC.window.journal
+local item=JournalUICatalog[991101]
+local originalSources=item.sources
+local originalPrefs=XC.db.journalUI
+local originalOptions=XC.db.options
+local originalSourceSelection=XC.journalSourceSelection
+local originalWaypoint,originalMap,originalOwnedPoint=LastWaypoint,MapOpened,XC.Navigation.lastPoint
+item.sources={
+    originalSources[1],
+    {kind="dungeon",name="Journal Boss",zone="Journal Dungeon",zoneID=991501,mapID=1436,x=21,y=43,side=1},
+    {kind="quest",name="Journal Dungeon Quest",zone="Journal Dungeon",zoneID=991501,questID=991601,minLevel=20,group=true,side=1},
+    {kind="quest",name="Later Journal Quest",zone="Journal Future",zoneID=991502,questID=991602,minLevel=26,side=1},
+    {kind="quest",name="Far Journal Quest",zone="Journal Future",zoneID=991502,questID=991603,minLevel=40,side=1},
+}
+XC.db.journalUI={state="active",lane="all",slotID=0}
+XC.db.options={faction="alliance",solo=false,crafted=true,auction=false}
+XC.journalSourceSelection={}
+XC:Refresh()
+p.search.edit:SetText("Journal Crown"); p.search.edit.scripts.OnTextChanged(p.search.edit,true)
+assert(p.selectedRow.item.id==item.id)
+local key=p.selectedRow.key
+assert(XC:SetJournalSource(p.selectedRow,1)); XC:RenderJournal()
+assert(p.selectedRow.source.kind=="vendor")
+local oldBestMap,oldMapName=C_Map.GetBestMapForUnit,MockMaps[1436]
+C_Map.GetBestMapForUnit=function() return 1436 end
+MockMaps[1436]="Journal Dungeon"
+p.destinationButton.scripts.OnClick()
+assert(p.destinationPickerOpen and not p.selectedRow and p.destinationChoices["all"])
+assert(p.destinationChoices["quest:991501"] and p.destinationChoices["dungeon:991501"])
+assert(p.destinationChoices["dungeon:991501"].label.text:find("1 target",1,true))
+assert(p.destinationChoices["dungeon:991501"].label.text:find("This zone",1,true))
+C_Map.GetBestMapForUnit,MockMaps[1436]=oldBestMap,oldMapName
+assert(not p.destinationChoices["quest:991502"])
+p.destinationChoices["dungeon:991501"].scripts.OnClick()
+assert(XC.db.journalUI.destination=="dungeon:991501" and p.selectedRow.key==key)
+assert(p.selectedRow.source.kind=="dungeon" and p.selectedRow.sourceCount==2)
+p.map.scripts.OnClick()
+assert(MapOpened==1436 and LastWaypoint.x==.21 and not XC.db.activeHunt)
+p.sourceChoice.scripts.OnClick()
+assert(p.selectedRow.source.questID==991601 and p.selectedRow.minLevel==20)
+p.destinationButton.scripts.OnClick()
+p.destinationChoices.all.scripts.OnClick()
+assert(not XC.db.journalUI.destination and p.selectedRow.source.kind=="vendor")
+
+local future=XC:GetJournalEntries("active","Later Journal Quest",0,"longterm",{destination="quest:991502",lookahead=3})
+assert(#future==0)
+future=XC:GetJournalEntries("active","Later Journal Quest",0,"longterm",{destination="quest:991502",lookahead=5})
+assert(#future==1 and future[1].source.questID==991602 and future[1].sourceCount==1 and future[1].minLevel==26)
+local groups=XC:GetJournalDestinations(future)
+assert(#groups==1 and groups[1].key=="quest:991502" and groups[1].later==1 and groups[1].minLevel==26 and groups[1].maxLevel==26)
+XC.db.journalUI.filters=true; XC.db.journalUI.lane="longterm"; p:ApplyLayout()
+assert(p.lookahead:IsShown() and p.lookahead.label.text:find("All levels",1,true))
+p.lookahead.scripts.OnClick()
+assert(XC.db.journalUI.lookahead==3 and p.lookahead.label.text:find("Next 3",1,true))
+p.lookahead.scripts.OnClick()
+assert(XC.db.journalUI.lookahead==5 and p.lookahead.label.text:find("Next 5",1,true))
+p.destinationButton.scripts.OnClick()
+assert(p.destinationChoices["quest:991502"].label.text:find("1 later",1,true))
+p.destinationChoices["quest:991502"].scripts.OnClick()
+assert(p.selectedRow.source.questID==991602 and p.selectedRow.locked)
+
+local width,height=XC.window:GetWidth(),XC.window:GetHeight()
+local previousScale,previousUI,previousBoost=XC.window:GetScale(),UIParent:GetScale(),XC:Appearance().textBoost
+XC.window:SetSize(900,720); XC:Appearance().textBoost=2; XC:ApplyAppearance()
+UIParent:SetScale(.64); XC.W.SetWindowScale(XC.window,.8); p:ApplyLayout()
+assert(p.destinationButton.point[2]>=p.slotButton.point[2]+p.slotButton.width+8)
+assert(p.intro.point[2]>=p.destinationButton.point[2]+p.destinationButton.width+8)
+assert(p.lookahead.label:GetStringWidth()+20<=p.lookahead.width+.01)
+assert(p.lookahead.point[2]+p.lookahead.width<=p.filters.width-8)
+assert(-p.lookahead.point[3]+p.lookahead.height<=p.filters.height-8)
+for _,toggle in ipairs({p.solo,p.craft,p.auction}) do
+    assert(p.lookahead.point[2]>=toggle.point[2]+toggle.width+toggle.label:GetStringWidth()+8
+        or -p.lookahead.point[3]>=-toggle.point[3]+toggle.height+8)
+end
+XC:Appearance().textBoost=previousBoost; UIParent:SetScale(previousUI); XC.W.SetWindowScale(XC.window,previousScale)
+XC.window:SetSize(width,height); XC:ApplyAppearance()
+
+item.sources=originalSources
+XC.db.journalUI=originalPrefs; XC.db.options=originalOptions; XC.journalSourceSelection=originalSourceSelection
+LastWaypoint,MapOpened,XC.Navigation.lastPoint=originalWaypoint,originalMap,originalOwnedPoint
+p.clear.scripts.OnClick(); XC:Refresh(); p:ApplyLayout()
 ''')
 test('journal equipment picker filters slots inline and preserves the saved choice', '''
 local p=XC.window.journal
@@ -1050,6 +1327,7 @@ local score=XC.Rules.Score(equipped,profile.weights,row.slotID,profile.weaponDps
 assert(equipped.id==991190 and p.equippedName.text:find("Equipped Training Crown",1,true))
 assert(p.equippedStats.text:find("5",1,true) and p.equippedScore.text:find(string.format("%.1f",score),1,true))
 assert(row.delta and math.abs(row.delta-(row.score-score))<.0001 and p.comparison.text:find("+",1,true))
+assert(p.statChanges:IsShown() and p.statChanges.text:find("+55 Str",1,true))
 local sent=ChatSent; ChatActive=false; ChatDraft=""
 p.equippedChat.scripts.OnClick()
 assert(ChatDraft=="item:991190" and ChatSent==sent and not next(XC.db.pins))
@@ -1265,7 +1543,7 @@ local hunt=XC.huntWindow.rows[1]
 assert(-hunt.noteInput.point[3]>=-hunt.notesLabel.point[3]+hunt.notesLabel:GetStringHeight()+6)
 assert(hunt.noteInput.height>=hunt.noteInput.edit.fontSize+8)
 local actionBottom=0
-for _,button in ipairs({hunt.remove,hunt.map,hunt.chat}) do
+for _,button in ipairs({hunt.map,hunt.chat,hunt.remove}) do
  assert(button.point[2]>=hunt.name.point[2]+hunt.name.width+8)
  assert(button.point[2]+button.width<=hunt.width-8)
  assert(-button.point[3]>=actionBottom+6 and -button.point[3]+button.height<=hunt.height-8)
@@ -1340,13 +1618,17 @@ lua.execute('XC:ShowTargetEditor()')
 export_layout('layout-editor-min.json')
 lua.execute('XC:ShowAbout()')
 export_layout('layout-help-min.json')
-lua.execute('XC:ShowAppearance()')
+lua.execute('XC:ShowAppearance("appearance")')
 export_layout('layout-appearance-min.json')
+lua.execute('XC:ShowAppearance("hints")')
+export_layout('layout-gear-hints-min.json')
+lua.execute('XC:ShowAppearance("weights")')
+export_layout('layout-weights-min.json')
 lua.execute('XC.W.SetWindowScale(XC.window,.8); XC:ShowPage("gear"); XC:Refresh()')
 export_layout('layout-readable-small.json')
 lua.execute('XC:Appearance().textBoost=2; XC:ApplyAppearance()')
 export_layout('layout-readable-largest.json')
-lua.execute('XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry(); XC:ShowAppearance()')
+lua.execute('XC:Appearance().textBoost=0; XC:ApplyAppearance(); XC.window:ResetGeometry(); XC:ShowAppearance("appearance")')
 export_layout('layout-appearance.json')
 lua.execute('XC:Appearance().textBoost=2; XC:ApplyAppearance(); local item=XC.Catalog[872]; XC:TrackItem({item=item,source=item.sources[1]},"dungeon",false); XC.guide:SetSize(330,330); XC.W.SetWindowScale(XC.guide,.8)')
 export_layout('layout-guide-readable.json')

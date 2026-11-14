@@ -1,12 +1,12 @@
-UPGRADE CROSSROADS 0.7.2 - START HERE
+UPGRADE CROSSROADS 0.9.0 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.7.2-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.9.0-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.7.2.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.9.0.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
@@ -19,18 +19,10 @@ The circular minimap emblem has transparent corners, with no square background.
 Left-click opens/closes the main window, right-click opens Hunts, and dragging
 moves the shortcut around the minimap. The emblem also appears in the header.
 
-CLEANER CONTROLS
-- Equipment and item choices use understated list rows instead of gold buttons.
-- WoW's standard font is the default throughout the addon, without heavy
-  outlines. Plain readable text, text size and outlines remain options in Settings.
-- Native action buttons use their own font string and text measurements. Custom
-  button backdrops and duplicate labels are removed.
-- The main background is a solid, controlled color instead of depending on an
-  old dialog texture. Default opacity is 100%; reduce it in Settings if desired.
-- The tiny A-/A+ and text-based close/resize controls are gone. X uses the native
-  close template, and the lower-right corner uses a resize-grip texture.
-- Journal, Hunts, Help and Add item share the darker panorama, aged parchment
-  and native frame style. Settings keeps its simpler controls without scenery.
+CONTROLS
+Journal, Hunts, Help and Add item share the darker panorama, aged parchment
+and native frame style. Settings uses plain WoW controls. WoW's standard font
+is the default. Title bars drag and X closes the window.
 
 FACTION FILTER
 In Journal, open Filters and cycle Alliance, Horde and Both. The first selection
@@ -59,10 +51,14 @@ include main-hand DPS, reflecting Forever's form weapon-DPS rule.
 
 USING IT
 The Journal opens first. Select any ranked item under an equipment heading to
-read its parchment description, source and reward. Track, Show on map, Remove
-and Chat stay with that item. Click its reward for immediate tracking. Source
-cycles alternate eligible sources. Search covers items and sources in the
-selected equipment filter.
+read its stat comparison and source. Track, Show on map, Remove
+and Chat stay with that item. Click the item card for immediate tracking.
+Source appears when there are alternate sources. Search by name, ID, link or
+source within your current filters.
+Use Destinations to browse quest zones and dungeons. The current zone is listed
+first when it matches. Future goals has a level range in Filters. Item tooltips
+compare against equipped gear, and Blizzard bags and quest rewards mark upgrades.
+The controls are under Settings / Gear hints.
 For crafted gear, click Recipe beside Source to see how to learn the recipe.
 Show on map uses a confirmed recipe location when available. Hunts
 and the tracker also show the recipe instructions.
@@ -77,11 +73,13 @@ paths. There is no separate Compare tab.
 
 Chat, Shift-click or right-click inserts an unsent item link into a chat draft.
 You choose the channel and send it. Ctrl-click previews gear. If a link is not
-cached, wait and click Chat again. Hunts retains notes and checklist progress.
-Add item and Set location use an embedded editor, with a Cancel button to return.
+cached, wait and click Chat again. Hunts puts the active item first. The tracker
+and Hunts share progress. Add item and Set location can fill in the map and
+coordinates where you are standing.
 
 SETTINGS AND SCALE
-Settings has four presets, background opacity, custom background/accent/border
+Settings has Appearance, Gear hints and Stat weights sections. Appearance has
+four presets, background opacity, custom background/accent/border
 colors, a native color picker or HEX, font/text size, outlines and a scale slider.
 The native color picker is a system dialog; the settings page remains in place.
 
@@ -114,8 +112,8 @@ Automated Lua checks, circular RGBA assets and offline layouts are included.
 The attached screenshots exposed issues the old offline skin could not predict;
 actual client font/template rendering still needs an in-game pass for this build.
 PREVIEW.png and GUIDE_PREVIEW.png are labeled offline illustrations, not live QA.
-Catalog remains the 2026-10-13 snapshot. This revision consolidates gear browsing
-and shares the journal theme across the content pages.
+The catalog includes the October 13 base snapshot and later reviewed quest rewards.
+Use /uc status or Help to check the installed version and data.
 
 The full source archive includes tests, tools, logo masters and the maintenance
 guide. Runtime needs no Python. Do not copy development files into AddOns.

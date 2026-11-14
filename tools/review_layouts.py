@@ -3,7 +3,7 @@ from pathlib import Path
 import subprocess,sys,json
 ROOT=Path(__file__).resolve().parents[1]
 views=[('layout.json','UpgradeCrossroads/PREVIEW.png'),('layout-guide.json','UpgradeCrossroads/GUIDE_PREVIEW.png')]
-views += [(f'layout-{v}-min.json',f'research/{v}-minimum.png') for v in ['planner','guide','hunts','editor','help','appearance']]
+views += [(f'layout-{v}-min.json',f'research/{v}-minimum.png') for v in ['planner','guide','hunts','editor','help','appearance','gear-hints','weights']]
 views += [(f'layout-{v}.json',f'research/{v}.png') for v in ['readable-small','readable-largest','appearance','guide-readable']]
 views += [(f'layout-{v}-spec-min.json',f'research/{v}-spec-minimum.png') for v in ['hunter','warlock']]
 views += [('layout-journal.json','UpgradeCrossroads/PREVIEW.png')]
