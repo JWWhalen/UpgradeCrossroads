@@ -1,0 +1,107 @@
+{
+  "build": "1.60.1.70938",
+  "items": {
+    "2721": {
+      "name": "Holy Shroud",
+      "equipment": "1 32 27 3 4 1 armor40 spi6 sp11 heal33",
+      "evidence": [
+        "https://foreverdb.net/item/2721",
+        "https://metabot.gg/en/wow-forever/items/holy-shroud"
+      ]
+    },
+    "7357": {
+      "name": "Elder's Hat",
+      "equipment": "1 34 29 2 4 1 armor37 sp15",
+      "suffix": "of Magic",
+      "evidence": [
+        "https://foreverchanges.pro/item/7357/elders-hat",
+        "https://forevermastery.com/en/items/7357-elder-s-hat"
+      ]
+    },
+    "7728": {
+      "name": "Beguiler Robes",
+      "equipment": "20 34 29 3 4 1 armor50 int12 spi8 sp9 heal9",
+      "origin": "Reported from Scarlet Monastery enemies.",
+      "evidence": [
+        "https://wow-forever.gg/db/items/7728-beguiler-robes/",
+        "https://foreverdb.net/item/7728",
+        "https://forevermastery.com/en/items/7728-beguiler-robes"
+      ]
+    },
+    "10288": {
+      "name": "Sage's Circlet",
+      "equipment": "1 31 26 2 4 1 armor36 sp14",
+      "suffix": "of Magic",
+      "estimatedRoll": true,
+      "evidence": [
+        "https://worldofwarcraft.blizzard.com/en-us/forever/us/armory/character/sync-mon",
+        "https://www.wowhead.com/forever/item=10288/sages-circlet",
+        "https://foreverchanges.pro/item/14178/watchers-cap",
+        "https://metabot.gg/en/wow-forever/methodology"
+      ]
+    },
+    "10289": {
+      "name": "Durable Hat",
+      "equipment": "1 32 27 2 4 1 armor36 sp14",
+      "suffix": "of Magic",
+      "evidence": [
+        "https://foreverchanges.pro/item/10289/durable-hat",
+        "https://senseos.gg/wiki/wow-forever/items/10289/durable-hat/"
+      ]
+    },
+    "13063": {
+      "name": "Starfaller",
+      "equipment": "26 34 29 3 2 19 int4 dmin32 dmax60 speed1400",
+      "evidence": [
+        "https://wowf.io/en/items/13063",
+        "https://azeroth.wiki/forever/items/starfaller"
+      ]
+    },
+    "14178": {
+      "name": "Watcher's Cap",
+      "equipment": "1 31 26 2 4 1 armor36 sp14",
+      "suffix": "of Magic",
+      "evidence": [
+        "https://foreverchanges.pro/item/14178/watchers-cap",
+        "https://www.wowhead.com/forever/item=14178/watchers-cap"
+      ]
+    },
+    "14189": {
+      "name": "Raincaller Cap",
+      "equipment": "1 32 27 2 4 1 armor36 sp14",
+      "suffix": "of Magic",
+      "evidence": [
+        "https://foreverchanges.pro/item/14189/raincaller-cap",
+        "https://ahledger.com/items/14189-raincaller-cap"
+      ]
+    },
+    "14201": {
+      "name": "Thistlefur Mantle",
+      "equipment": "3 34 29 2 4 1 armor34 sp12",
+      "suffix": "of Magic",
+      "evidence": [
+        "https://www.60.tools/bis/level-30/druid/balance",
+        "https://ahledger.com/items/14201-thistlefur-mantle",
+        "https://bindonforever.com/item/14201"
+      ]
+    },
+    "286988": {
+      "name": "Violet Sorcerer's Leggings",
+      "equipment": "7 34 29 3 4 1 armor44 int13 spi5 sp12 heal12",
+      "origin": "Reported from Fallen Mages in the City of Dalaran.",
+      "evidence": [
+        "https://azeroth.wiki/forever/items/violet-sorcerer-s-leggings",
+        "https://www.wowhead.com/forever/item=286988/violet-sorcerers-leggings"
+      ]
+    },
+    "286995": {
+      "name": "Guardian's Emblem",
+      "equipment": "2 33 28 3 4 0 sta8 sp6 heal6",
+      "origin": "Reported from City of Dalaran enemies.",
+      "evidence": [
+        "https://foreverdb.net/item/286995",
+        "https://www.wowhead.com/forever/item=286995/guardians-emblem"
+      ]
+    }
+  }
+}

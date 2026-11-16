@@ -356,6 +356,9 @@ function W.Tooltip(frame,item,shortcut)
         GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
         if link then GameTooltip:SetHyperlink(link)
         else GameTooltip:SetText(item.name); GameTooltip:AddLine("Item data is not cached yet.",.6,.7,.8,true) end
+        if item.suggestedSuffix then
+            GameTooltip:AddLine("Suggested roll: "..item.suggestedSuffix..". The tooltip shows the base item.",.95,.77,.37,true)
+        end
         GameTooltip:AddLine(shortcut or "Click: track  /  Shift-click or right-click: chat",.45,.85,.75,true)
         GameTooltip:AddLine("Ctrl-click: dressing room",.6,.7,.8,true)
         GameTooltip:Show()

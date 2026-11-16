@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.9.0
+UPGRADE CROSSROADS 0.9.1
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -27,10 +27,13 @@ Active shows eligible suggestions. Completed records items actually observed in
 your bags/equipment or acquired saved hunts; it is not a full historic collection.
 Removed hides an item until you restore it, preserving its hunt notes/checklists.
 Use Filters for source paths, Solo, Crafts, AH and Alliance/Horde/Both. Available
-now uses your current level; Future goals includes later levels. The left search
+now uses your current level, including tradable World & BoE drops. Future goals
+includes later levels. Reset sources restores standard browsing, and Include
+alternatives reveals lower-scoring gear for the current filters. The left search
 matches item, boss, quest, recipe source and zone names. You can paste an item
 link or enter an item ID.
-Choose 1/3/5/10 or All picks per slot; All keeps every matching item reachable.
+Choose Show all gear in a single slot to see every match. In the all-equipment
+view, cycle the picks-per-slot limit. The result count shows hidden matches.
 These ranks use model weights, not verified BiS or a simulation.
 
 Use Destinations beside Equipment to see quest zones and dungeons with matching
@@ -152,8 +155,10 @@ levels up to 60. These are goals under a simple model, not verified BiS lists.
 PREFERENCES
 Solo only hides known dungeon/raid drops and quests tagged as requiring a group.
 Crafted allowed permits crafted targets; you may need another player to craft.
-AH allowed permits your personal auction targets. This build does not scrape
-auction listings, invent prices or promise that an item is for sale.
+AH allowed includes personal auction targets. Reviewed Bind on Equip drops
+are always available under the World & BoE source type. A named random suffix
+is one possible roll. Chat links the base item and appends the recommended
+suffix in text. The catalog does not contain live listings or prices.
 
 ADDING YOUR OWN TARGET
 Choose Add item, enter an item ID (or paste an item link), cycle the source
@@ -214,7 +219,7 @@ snapshot until a maintained data release replaces it.
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This v0.9.0 update has
+ownership changes, UI construction and command/event flows. This v0.9.1 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

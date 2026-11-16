@@ -2,7 +2,7 @@
 -- observed from the client; completing a quest or a manual checklist is never
 -- treated as proof that its reward was obtained.
 local _, XC = ...
-local laneNames={all=true,reliable=true,dungeon=true,longterm=true}
+local laneNames={all=true,reliable=true,dungeon=true,world=true,longterm=true}
 local raidZones={[1977]=true,[2677]=true,[3428]=true,[3429]=true,[3456]=true,[2717]=true,[409]=true}
 -- These quests are catalogued by pickup zone. The instance association is
 -- used only for browsing, so quest givers and navigation stay with the quest.
@@ -35,11 +35,6 @@ function XC:InvalidateJournal()
     self.journalCache=nil
 end
 
-local function sourceLane(source)
-    if source.kind=="dungeon" or source.kind=="raid" or source.group then return "dungeon" end
-    if source.kind=="world" then return "longterm" end
-    return "reliable"
-end
 local function minimumLevel(item,source,context,slot)
     return math.max(source.minLevel or 0,XC.Rules.MinimumLevel(item,context,slot))
 end
@@ -82,7 +77,7 @@ local function sourcesFor(item, context, options, slot, filter, historical, dest
         ctx=copy(context); ctx.completed={}
     end
     for _,source in ipairs(item.sources or {}) do
-        local lane=sourceLane(source)
+        local lane=XC.Rules.SourceLane(source)
         local fits=filter=="all" or filter=="longterm" or filter==lane
         local level=minimumLevel(item,source,context,slot)
         if fits and (historical or filter=="longterm" or level<=context.level)
@@ -117,7 +112,7 @@ local function makeEntry(self, original, slot, filter, historical, pin, removed,
     selected=math.max(1,math.min(#sources,selected))
     row.sources=sources; row.source=sources[selected]
     row.sourceIndex=selected; row.sourceCount=#sources
-    row.lane=sourceLane(row.source)
+    row.lane=XC.Rules.SourceLane(row.source)
     if filter=="longterm" then row.lane="longterm" end
     row.minLevel=minimumLevel(row.item,row.source,context,slot)
     row.locked=row.minLevel>context.level
@@ -146,14 +141,15 @@ function XC:BuildJournalCache()
             end
         end
         local key=itemKey(item.id or id)
-        if key and ((context.worn and context.worn[item.id]) or self.Client.Owned(item.id)) then
+        if key and ((context.worn and context.worn[item.id]) or self.Client.Owned(item.suggestedSuffix and item or item.id)) then
             if not state.obtained[key] then state.obtained[key]={itemID=item.id,observedAt=now} end
         end
     end
     for key,label in pairs(dungeonFallbacks) do dungeonZones[key]=dungeonZones[key] or label end
     for id,pin in pairs(self.db.pins or {}) do
         local key=pin.item and itemKey(pin.item.id or id)
-        if key and (pin.acquired or self.Client.Owned(pin.item.id) or (context.worn and context.worn[pin.item.id])) then
+        if key and (pin.acquired or self.Client.Owned(pin.item.suggestedSuffix and pin.item or pin.item.id)
+            or (context.worn and context.worn[pin.item.id])) then
             if not state.obtained[key] then state.obtained[key]={itemID=pin.item.id,observedAt=pin.acquiredAt or now} end
         end
     end
@@ -171,7 +167,8 @@ function XC:BuildJournalCache()
             local key=itemKey(row.item.id)
             if key and not state.obtained[key] and not state.removed[key] then
                 local entry=copy(row); entry.slot=slot
-                entry.currentUsable=self.Rules.Usable(row.item,context,slot) and true or false
+                local usable,reason=self.Rules.Usable(row.item,context,slot)
+                entry.currentUsable=usable or (row.requiresOneHand and reason=="Two-handed weapon equipped") or false
                 cache.active[#cache.active+1]=entry
             end
         end

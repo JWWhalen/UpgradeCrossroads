@@ -1,3 +1,15 @@
+v0.9.1
+- Added 11 tradable gear options for leveling, including six headpieces.
+  Bundled World & BoE gear appears in Available now even with personal AH
+  targets turned off. Known random rolls are labeled and tracked separately
+  from other suffixes on the same base item.
+- Added Reset sources, Include alternatives and a one-click Show all gear
+  button for a single slot. Counts show how many matching entries are visible.
+- Off-hand options now appear with a staff equipped and flag the one-handed
+  main-hand requirement. The score omits a direct comparison in that case.
+- Updated three Tailoring recipe entries and aligned verified recipe skill
+  requirements with the catalog.
+
 v0.9.0
 - Removed the hidden Compare page and its duplicate gear scoring work.
 - Reworked Journal around one item card, signed stat changes and a clear source.

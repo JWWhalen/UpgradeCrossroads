@@ -2404,9 +2404,9 @@
   },
   "3857": {
     "kind": "vendor",
-    "text": "Classic vendors include Xizk Goodstitch. Check their stock and requirements for Pattern: Enchanter's Cowl in Forever.",
-    "basis": "Classic baseline",
-    "evidence": "LibProfessionDB borrowed Vanilla vendor data",
+    "text": "Check Xizk Goodstitch in Stranglethorn Vale for the limited-stock Pattern: Enchanter's Cowl.",
+    "basis": "Forever",
+    "evidence": "https://metaforge.app/wow-forever/database/recipes/pattern-enchanters-cowl; https://theforeverera.com/en/recipes/tailoring/enchanters-cowl/",
     "skill": 130,
     "recipeItemID": 14630
   },
@@ -3315,9 +3315,10 @@
   },
   "8762": {
     "kind": "trainer",
-    "text": "Ask a Tailoring trainer. Classic lists this recipe as trainer-taught.",
-    "basis": "Classic baseline",
-    "evidence": "LibProfessionDB borrowed Vanilla trainer data"
+    "text": "Learn Silk Headband from a Tailoring trainer.",
+    "basis": "Forever",
+    "evidence": "https://wowforever.ninja/professions/tailoring/8762-silk-headband/; https://www.wowhead.com/forever/spell=8762/silk-headband",
+    "skill": 125
   },
   "8764": {
     "kind": "trainer",
@@ -11436,10 +11437,10 @@
     "recipeItemID": 253982
   },
   "1257417": {
-    "kind": "unknown",
-    "text": "Learn from Pattern: Filigreed Pearly Circlet. Its acquisition source is unverified.",
+    "kind": "drop",
+    "text": "Pattern: Filigreed Pearly Circlet has been reported from Lorgus Jett and Aku'mai in Blackfathom Deeps. Drops are random.",
     "basis": "Forever",
-    "evidence": "WCLBox current client teaching item",
+    "evidence": "https://endgametools.com/en/wow-forever/items/253984; https://timesaver.gg/tools/wow-forever/professions/tailoring",
     "skill": 125,
     "recipeItemID": 253984
   },

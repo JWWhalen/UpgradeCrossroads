@@ -19,15 +19,14 @@ The upstream `Items.lua` contains facts from Blizzard Classic Era client
 build 1.15.9.70576, not a promise of Forever equivalence. Equipment with no
 Forever override remains explicitly marked `classic` in the catalog and UI.
 There are 2,149 historical Forever overrides, 15 additional reviewed Forever
-stat records, and 1,407 Classic baseline records. All 3,571 admitted records
-have a name, equipment data and at least one source. The in-game tooltip is
-the reference for exact stats on your realm.
+stat records for quest rewards, 11 reviewed tradable drops, and 1,407 Classic
+baseline records. All 3,582 admitted records have a name, equipment data and
+at least one source. The in-game tooltip is the reference for exact stats on
+your realm.
 
-The source data contains 2,048 quest-source associations, 411 dungeon-source
-associations, and 1,321 crafting-source associations. Several items have more
-than one source. These are associations, not distinct item counts. No vendor,
-auction, raid or reputation catalog coverage is claimed in this first build;
-personal targets support those source types.
+The source data contains 2,048 quest, 411 dungeon, 1,321 crafting and 11
+tradable-drop associations. Several items have more than one source. Personal
+targets also support vendor, auction, raid and reputation sources.
 
 Most quest faction, race, class and minimum-level requirements come from the
 historical snapshot. Full prerequisite chains and source coordinates are not included
@@ -42,6 +41,19 @@ Item names, icons and tooltips displayed in the live client use its own item
 API when loaded. Known equipped items are scored against the same snapshot as
 the candidate catalog to avoid mixing rating scales. Unknown equipped items
 can use supported client base stats; incomplete comparisons are labeled.
+
+# Reviewed tradable leveling gear
+
+The hand-reviewed `research/reviewed_boe.json` adds eleven real item IDs for
+around levels 26–29, spanning cloth head, shoulder, chest and legs plus a
+necklace and a wand. It cites ForeverChanges 1.60.1.70938 random property
+records, other Forever item tooltips, and observed loot or auction sources.
+Fixed-stat drops use the reported item stats. A row labeled with a random
+suffix uses stats for that named roll. An official Forever Armory profile
+shows Sage's Circlet of Magic equipped. Its +14 Spell Power is an estimate
+from the same item level, quality and slot budget as the reported Watcher's
+Cap of Magic. Check any actual copy before buying. These data do not include
+prices, guarantee a drop, or pin one location as the source of a tradable drop.
 
 # Reviewed Forever quest rewards
 
@@ -225,9 +237,9 @@ be reviewed before release. The game reads the generated table offline.
   Sacred Cloth teaches Mooncloth Boots. The Mortar: Reloaded refills a
   Goblin Mortar and cannot be used to obtain a new one.
 
-Of 1,321 catalogued crafting spells, 410 have Forever guidance beyond the
-identity of a teaching item, 496 have a labeled Classic baseline lead, and
-415 name a teaching item with the acquisition source unverified. There are
+Of 1,321 catalogued crafting spells, 413 have Forever guidance beyond the
+identity of a teaching item, 494 have a labeled Classic baseline lead, and
+414 name a teaching item with the acquisition source unverified. There are
 202 recipes with at least one faction-filtered map pin. Recipe notes identify
 where to learn a recipe. Crafting stations, ingredients, and recipe ownership
 are not inferred. When refreshing the snapshot, review the new facts in the

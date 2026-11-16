@@ -51,7 +51,7 @@ FireEvent("ADDON_LOADED","UpgradeCrossroads")
 assert(XC.db.profile=="warrior_arms" and XC.db.slot==16)
 assert(XC.db.schema==6 and XC:Appearance().font=="classic")
 assert(type(SlashCmdList.UPGRADECROSSROADS)=="function")
-assert(XC.CatalogMeta.count==3571)
+assert(XC.CatalogMeta.count==3582 and XC.CatalogMeta.reviewedBoeCount==11)
 assert(XC.CatalogMeta.liveQuestCount==22 and XC.CatalogMeta.liveQuestRewardLinks==49)
 local ring=XC.Catalog[270081]
 assert(ring.basis=="forever" and ring.stats.int==12 and ring.stats.sp==5)
@@ -961,7 +961,7 @@ local catalog={}
 for _,sub in ipairs({2,3,16,18,19}) do
     catalog[#catalog+1]={id=990100+sub,name="Weapon",classID=2,subclassID=sub,
         inv=sub==16 and 25 or (sub==19 and 26 or 15),req=1,stats={agi=10,dps=sub==16 and 9999 or 30},
-        sources={{kind="quest",name="Quest"},{kind="dungeon",name="Dungeon"}}}
+        sources={{kind="quest",name="Quest"},{kind="dungeon",name="Dungeon"},{kind="world",name="World drop"}}}
 end
 local profile={weights={agi=1,dps=5},weaponDpsSlots={[18]=true}}
 local lanes=XC.Rules.Build(catalog,c,options,XC:GetSlot(18),profile)
@@ -1425,6 +1425,8 @@ p.search.edit:SetText("Future Journal"); p.search.edit.scripts.OnTextChanged(p.s
 assert(#p.entries==1 and p.selectedRow.item.id==991104 and p.selectedRow.locked)
 assert(p.rewardMeta.text=="Requires level 40")
 p.clear.scripts.OnClick(); p.lane.scripts.OnClick()
+assert(XC.db.journalUI.lane=="world")
+p.lane.scripts.OnClick()
 assert(XC.db.journalUI.lane=="all")
 for _,row in ipairs(p.entries) do assert(row.item.id~=991104) end
 ''')
@@ -1573,6 +1575,87 @@ XC.sourceSelection=saved.sourceSelection; XC.journalSourceSelection=saved.journa
 for id in pairs(JournalUICatalog) do ItemInfo[id]=nil end
 XC:ShowPage("gear"); XC:Refresh(); assert(XC.window.journal:IsShown())
 JournalUITest=nil; JournalUICatalog=nil
+''')
+
+test('level 29 Arcane mage browses tailored and tradable head options with a staff equipped', '''
+local oldClass,oldID,oldLevel,oldFaction=MockClass,MockClassID,MockLevel,MockFaction
+local oldInventory,oldOwned,oldCompleted=FakeInventory,Owned,Completed
+local journalUI,journal,options,profile=XC.db.journalUI,XC.db.journal,XC.db.options,XC.db.profile
+local p=XC.window.journal
+local oldQuery=p.query
+local headGear={253983,7050,253975,253957,4322}
+local worldGear={7357,10289,10288,14189,14178,2721}
+MockClass,MockClassID,MockLevel,MockFaction="MAGE",8,29,"Alliance"
+FakeInventory,Owned,Completed={[16]=999956},{},{}
+ItemInfo[999956]={name="Mage's staff",quality=2,ilvl=25,req=15,equip="INVTYPE_2HWEAPON",classID=2,subclassID=10,
+    stats={ITEM_MOD_INTELLECT_SHORT=4,ITEM_MOD_DAMAGE_PER_SECOND_SHORT=11}}
+XC.db.profile="mage_arcane"
+XC.db.journalUI={state="active",lane="all",limit=3}
+XC.db.journal={}
+XC.db.options={crafted=false,solo=false,auction=false,faction="alliance"}
+XC:ShowPage("gear"); p.clear.scripts.OnClick(); XC:SetJournalSlot(1)
+local function ids(rows)
+    local byID={}
+    for _,row in ipairs(rows) do byID[row.item.id]=row end
+    return byID
+end
+local listed=ids(p.entries)
+for _,id in ipairs(headGear) do assert(not listed[id]) end
+for _,id in ipairs(worldGear) do assert(listed[id] and listed[id].source.bindOnEquip) end
+assert(p.intro.text:find("Crafts off",1,true))
+p.resetSources.scripts.OnClick()
+listed=ids(p.entries)
+assert(XC.db.options.crafted and not XC.db.options.auction)
+for _,id in ipairs(headGear) do assert(listed[id] and listed[id].source.kind=="craft") end
+assert(p.status.text:find("Showing 3 of",1,true) and p.limit.label.text=="Show all gear")
+p.limit.scripts.OnClick()
+assert(XC.db.journalUI.limit==0 and not p.status.text:find("Showing",1,true))
+local world=ids(XC:GetJournalEntries("active","",1,"world"))
+assert(world[7357].item.suggestedSuffix=="of Magic")
+assert(world[10288].item.suggestedSuffix=="of Magic" and world[10288].item.estimatedRoll)
+assert(XC.Navigation.SourceKey(world[7357].source)~=XC.Navigation.SourceKey(world[10289].source))
+XC:SetJournalSlot(17)
+assert(#p.entries>0 and p.selectedRow.requiresOneHand and not p.selectedRow.delta)
+assert(p.rewardMeta.text:find("Requires a one-handed main hand",1,true))
+FakeInventory[18]=999957
+ItemInfo[999957]={name="Strong wand",quality=2,ilvl=25,req=15,equip="INVTYPE_RANGEDRIGHT",classID=2,subclassID=19,
+    stats={ITEM_MOD_SPELL_POWER_SHORT=200,ITEM_MOD_DAMAGE_PER_SECOND_SHORT=10}}
+XC:SetJournalSlot(18)
+assert(#p.entries==0 and p.emptyAction.label.text=="Include alternatives" and p.emptyAction:IsShown())
+p.emptyAction.scripts.OnClick()
+local wand=ids(XC:GetJournalEntries("active","",18,"world"))[13063]
+assert(wand and wand.delta<0 and XC.db.options.showAlternatives)
+XC.db.journalUI,XC.db.journal,XC.db.options,XC.db.profile=journalUI,journal,options,profile
+MockClass,MockClassID,MockLevel,MockFaction=oldClass,oldID,oldLevel,oldFaction
+FakeInventory,Owned,Completed=oldInventory,oldOwned,oldCompleted
+ItemInfo[999956]=nil; ItemInfo[999957]=nil; p.query=oldQuery; XC:Refresh()
+''')
+test('random-roll targets preserve live equipped stats and only credit the suggested suffix', '''
+local target=XC.Catalog[7357]
+local id=target.id
+local oldBags,oldLink,oldInventory,oldOwned=C_Container,GetInventoryItemLink,FakeInventory,Owned
+local oldPins=XC.db.pins
+XC.db.pins={}
+FakeInventory={[1]=id}; Owned={[id]=1}
+ItemInfo[id]={name=target.name,quality=2,ilvl=34,req=29,equip="INVTYPE_HEAD",classID=4,subclassID=1,
+    stats={ITEM_MOD_INTELLECT_SHORT=13}}
+local other="|cff1eff00|Hitem:7357::::::1234|h[Elder's Hat of Intellect]|h|r"
+local preferred="|cff1eff00|Hitem:7357::::::1235|h[Elder's Hat of Magic]|h|r"
+GetInventoryItemLink=function(_,slot) if slot==1 then return other end end
+C_Container={GetContainerNumSlots=function(bag) return bag==0 and 1 or 0 end,GetContainerItemLink=function() return other end}
+local context=XC.Client.Context()
+assert(context.occupied[1] and not context.worn[id])
+assert(context.equipped[1].stats.int==13 and not context.equipped[1].stats.sp)
+local name=XC.Client.Presentation(target)
+assert(name=="Elder's Hat of Magic")
+local pin=XC:EnsureHunt({item=target,source=target.sources[1]},"world")
+XC.Client.UpdatePins()
+assert(not pin.acquired and not XC.Client.Owned(target))
+C_Container.GetContainerItemLink=function() return preferred end
+XC.Client.UpdatePins()
+assert(pin.acquired and XC.Client.Owned(target))
+C_Container,GetInventoryItemLink,FakeInventory,Owned=oldBags,oldLink,oldInventory,oldOwned
+XC.db.pins=oldPins; ItemInfo[id]=nil
 ''')
 
 # Texture packaging checks do not depend on the client double.

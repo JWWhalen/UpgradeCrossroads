@@ -7,6 +7,7 @@ function N.SourceKey(source)
     if source.questID then return "quest:"..source.questID end
     if source.npcID then return "npc:"..source.npcID..":"..tostring(source.zoneID or 0) end
     if source.spellID then return "craft:"..source.spellID end
+    if source.kind=="world" and source.itemID then return "world:"..source.itemID end
     return tostring(source.kind)..":"..tostring(source.name)..":"..tostring(source.zone or "")
 end
 function N.ValidPoint(point)
@@ -192,6 +193,7 @@ function N.Resolve(source)
         if p then result.point=p; result.status="point"; result.message="Reported creature spawn; this does not detect whether it is currently alive."; return result end
     end
     if source.questID and not LibQuestieDB then result.message="Track this quest from your log, or install QuestieDB for known quest-giver locations." end
+    if source.bindOnEquip and not result.point then result.message="This tradable drop has no single waypoint. Check the Auction House or the listed drop source." end
     return result
 end
 function N.Signature(result,itemID)

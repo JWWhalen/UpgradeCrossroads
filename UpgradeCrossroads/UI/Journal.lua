@@ -2,8 +2,8 @@ local _, XC = ...
 local W=XC.W
 local at=W.Place
 local stateLabels={active="Active",completed="Completed",removed="Removed"}
-local laneLabels={all="Available now",reliable="Quest & craft",dungeon="Dungeons",longterm="Future goals"}
-local laneOrder={"all","reliable","dungeon","longterm"}
+local laneLabels={all="Available now",reliable="Quest & craft",dungeon="Dungeons",longterm="Future goals",world="World & BoE"}
+local laneOrder={"all","reliable","dungeon","longterm","world"}
 local horizons={0,3,5,10}
 local function lookaheadLabel(levels)
     return (levels>0 and ("Next "..levels.." levels") or "All levels").."  >"
@@ -18,6 +18,7 @@ local function filterSummary(v,options,context)
     if options.solo then parts[#parts+1]="Solo" end
     if not options.crafted then parts[#parts+1]="Crafts off" end
     if options.auction then parts[#parts+1]="Auction targets" end
+    if options.showAlternatives and v.state=="active" then parts[#parts+1]="Includes alternatives" end
     return table.concat(parts,"  /  ")
 end
 local function prefs()
@@ -34,6 +35,19 @@ local function prefs()
     if type(p.destinationLabel)~="string" then p.destinationLabel=nil end
     p.collapsed=type(p.collapsed)=="table" and p.collapsed or {}
     return p
+end
+local function sourcesRestricted(v,options,context)
+    local faction=XC.Rules.FactionMode(options,context)
+    return v.lane~="all" or v.destination or options.solo or not options.crafted
+        or (faction~=XC.Rules.FactionMode({},context) and faction~="both")
+end
+local function resetSources(v)
+    local options=XC.db.options
+    v.lane="all"; v.destination=nil; v.destinationLabel=nil; v.selected=nil
+    options.solo=false; options.crafted=true
+    if XC.Rules.FactionMode(options,XC.context)~="both" then options.faction=XC.Rules.FactionMode({},XC.context) end
+    XC.journalSourceSelection=nil
+    XC:Refresh()
 end
 function XC:SetJournalSlot(slotID)
     slotID=tonumber(slotID)
@@ -111,6 +125,13 @@ function XC:BuildJournal()
     p.solo=W.Toggle(p.filters,"Solo",function(v) XC.db.options.solo=v; XC:Refresh() end)
     p.craft=W.Toggle(p.filters,"Crafts",function(v) XC.db.options.crafted=v; XC:Refresh() end)
     p.auction=W.Toggle(p.filters,"AH",function(v) XC.db.options.auction=v; XC:Refresh() end)
+    p.alternatives=W.Toggle(p.filters,"Include alternatives",function(value)
+        XC.db.options.showAlternatives=value; prefs().selected=nil; XC:Refresh()
+    end)
+    p.resetSources=W.Button(p.filters,"Reset sources",125,28,function() resetSources(prefs()) end)
+    W.Hint(p.resetSources,"Include crafts, world drops and group sources at your level. Clear the destination and return to your faction if browsing the opposite one.")
+    W.Hint(p.alternatives,"Include usable gear with an equal or lower score for your spec under the same source and level filters.")
+    W.Hint(p.auction,"Include personal auction targets. Tradable world drops already appear in Available now.")
     p.lookahead=W.Button(p.filters,"All levels  >",122,29,function()
         local v=prefs(); local index=1
         for i,n in ipairs(horizons) do if n==v.lookahead then index=i; break end end
@@ -119,7 +140,7 @@ function XC:BuildJournal()
         p:ApplyLayout()
     end)
     W.Hint(p.lookahead,"Future goals can include all levels or stop 3, 5, or 10 levels above yours.")
-    W.Hint(p.lane,"Available now combines eligible sources at your level. Future goals includes items for later levels. Rankings are model estimates.")
+    W.Hint(p.lane,"Available now combines sources at your level, including tradable drops. Future goals includes later levels. Rankings are model estimates.")
     W.Hint(p.faction,"Cycle Alliance, Horde or Both. Sources for the other faction are labeled.")
     -- One painting continues beneath both border-only panes and their gutter.
     p.panorama=W.JournalPanorama(p)
@@ -157,10 +178,25 @@ function XC:BuildJournal()
     p.scroll:SetPoint("TOPLEFT",8,-88); p.scroll:SetPoint("BOTTOMRIGHT",-28,54)
     p.child=CreateFrame("Frame",nil,p.scroll); p.child:SetSize(340,400); p.scroll:SetScrollChild(p.child); p.rows={}
     p.empty=at(W.Text(p.child,"",13,self.Colors.muted,310),8,12)
+    p.emptyAction=W.Button(p.child,"",135,29,function()
+        local v=prefs()
+        if (p.query or "")~="" then
+            p.query=""; p.search.edit:SetText(""); XC:RenderJournal()
+        elseif sourcesRestricted(v,XC.db.options,XC.context) then resetSources(v)
+        else
+            XC.db.options.showAlternatives=true; v.selected=nil; XC:Refresh()
+        end
+    end)
     p.limit=W.Button(p.left,"",150,28,function()
+        local v=prefs()
+        if v.slotID~=0 then
+            v.limit=v.limit~=0 and 0 or 3
+            XC:RenderJournal()
+            return
+        end
         local choices={1,3,5,10,0}; local n=1
-        for i,v in ipairs(choices) do if v==prefs().limit then n=i end end
-        prefs().limit=choices[n%#choices+1]; XC:RenderJournal()
+        for i,value in ipairs(choices) do if value==v.limit then n=i end end
+        v.limit=choices[n%#choices+1]; XC:RenderJournal()
     end)
     p.expand=W.Button(p.left,"Expand all",110,28,function() prefs().collapsed={}; XC:RenderJournal() end)
     W.Hint(p.limit,"Ranked suggestions per slot. Choose All to scroll through every matching item. Completed and Removed show all their saved entries.")
@@ -240,18 +276,16 @@ function XC:BuildJournal()
         at(p.lane,12,16); at(p.faction,24+p.lane:GetWidth(),16)
         local filterX=36+p.lane:GetWidth()+p.faction:GetWidth()
         for _,toggle in ipairs({p.solo,p.craft,p.auction}) do at(toggle,filterX,18); filterX=filterX+toggle:GetWidth()+toggle.label:GetStringWidth()+16 end
-        local filterHeight=math.max(66,p.lane:GetHeight()+28,p.faction:GetHeight()+28)
+        local secondRow=math.max(p.lane:GetHeight(),p.faction:GetHeight())+24
+        at(p.alternatives,12,secondRow)
+        local filterHeight=secondRow+math.max(24,p.alternatives.label:GetStringHeight())+10
+        W.FitButton(p.resetSources,125); at(p.resetSources,width-28-p.resetSources:GetWidth(),secondRow-2)
+        filterHeight=math.max(filterHeight,secondRow+p.resetSources:GetHeight()+8)
         p.lookahead.label:SetText(lookaheadLabel(v.lookahead))
         W.FitButton(p.lookahead,122)
         if v.lane=="longterm" and v.state=="active" then
-            local lookaheadX=width-28-p.lookahead:GetWidth()
-            if lookaheadX<filterX then
-                at(p.lookahead,12,filterHeight-6)
-                filterHeight=filterHeight+p.lookahead:GetHeight()+6
-            else
-                at(p.lookahead,lookaheadX,16)
-                filterHeight=math.max(filterHeight,p.lookahead:GetHeight()+28)
-            end
+            at(p.lookahead,48+p.alternatives.label:GetStringWidth(),secondRow-2)
+            filterHeight=math.max(filterHeight,secondRow+p.lookahead:GetHeight()+8)
         end
         local top=filterY+(v.filters and filterHeight+10 or 0)
         p.filters:SetShown(v.filters and true or false); at(p.filters,8,filterY); p.filters:SetSize(width-16,filterHeight)
@@ -366,6 +400,7 @@ function XC:RenderJournalDetail(row)
         else p.location:SetText(nav.message or "Location not available yet. You can still track this item.") end
         local state=prefs().state
         local status=state=="completed" and "Obtained" or self:Availability(row)
+        if row.requiresOneHand then status=status.." / Requires a one-handed main hand" end
         local key=tostring(row.item.id)
         if self.db.activeHunt==key and state~="completed" then status="Tracking / "..status
         elseif self.db.pins[key] and state~="completed" then status="Saved hunt / "..status end
@@ -373,6 +408,7 @@ function XC:RenderJournalDetail(row)
         local profile=self:GetProfile(self.db.profile)
         local scoreText=string.format("%.1f model score",row.score or 0)
         if row.delta and p.equippedItem then scoreText=string.format("%+.1f vs equipped / %s",row.delta,scoreText)
+        elseif row.requiresOneHand then scoreText=scoreText.." / compare the full weapon setup"
         elseif not row.delta then scoreText=scoreText.." / comparison unavailable" end
         p.comparison:SetText(scoreText)
         p.stats:SetText("Target stats: "..W.StatLine(row.item,profile.weights))
@@ -380,7 +416,9 @@ function XC:RenderJournalDetail(row)
         p.statChanges:SetShown(comparableStats and true or false)
         if comparableStats then p.statChanges:SetText("Stat changes: "..W.StatLine(row.item,profile.weights,p.equippedItem)) end
         local weightBasis=self.db.weights[profile.id] and "Custom stat weights" or "Starter role weights"
-        p.basis:SetText((row.item.basis=="live" and "Client stats" or row.item.basis=="forever" and "Forever snapshot" or "Classic baseline; verify in Forever").." / "..weightBasis..". Score covers base stats.")
+        local basis=row.item.estimatedRoll and "Estimated suffix stats. Verify the roll in game."
+            or (row.item.basis=="live" and "Client stats" or row.item.basis=="forever" and "Forever snapshot" or "Classic baseline; verify in Forever")
+        p.basis:SetText(basis.." / "..weightBasis..". Score covers modeled stats.")
         p.sourceChoice.label:SetText(string.format("Source %d / %d  >",row.sourceIndex,row.sourceCount))
         p.remove.label:SetText(state=="removed" and "Restore" or "Remove")
         W.Tooltip(p.rewardButton,row.item)
@@ -440,8 +478,11 @@ function XC:RenderJournal()
         or "Search item, boss, quest, recipe source or zone names. Paste an item link or enter its ID to find a specific item.")
     p.faction.label:SetText(self.Rules.FactionLabels[self.Rules.FactionMode(self.db.options,self.context)].."  >")
     p.solo:SetChecked(self.db.options.solo); p.craft:SetChecked(self.db.options.crafted); p.auction:SetChecked(self.db.options.auction)
+    p.alternatives:SetChecked(self.db.options.showAlternatives==true)
+    p.resetSources:SetEnabled(not not sourcesRestricted(v,self.db.options,self.context))
     for id,b in pairs(p.tabs) do W.SelectRow(b,id==v.state) end
-    p.limit.label:SetText((v.limit==0 and "All" or v.limit).." / slot  >")
+    p.limit.label:SetText(v.slotID~=0 and (v.limit==0 and "All gear  >" or "Show all gear")
+        or ((v.limit==0 and "All" or v.limit).." / slot  >"))
     local entries=self:GetJournalEntries(v.state,p.query,p.slotPickerOpen and 0 or v.slotID,v.lane,{
         destination=not p.destinationPickerOpen and v.destination or nil,lookahead=v.lookahead,
     })
@@ -450,7 +491,7 @@ function XC:RenderJournal()
     for _,row in ipairs(entries) do if row.key==v.selected then selected=row; break end end
     selected=selected or entries[1]
     if hasResults then v.selected=selected and selected.key or nil end
-    hide(p.rows); p.slotChoices={}; p.destinationChoices={}; local y,index,slotID,count=0,0,nil,0
+    hide(p.rows); p.slotChoices={}; p.destinationChoices={}; local y,index,slotID,count,displayed=0,0,nil,0,0
     local function nextRow()
         index=index+1
         if not p.rows[index] then p.rows[index]=W.JournalRow(p.child,"",p.child:GetWidth(),28) end
@@ -531,6 +572,7 @@ function XC:RenderJournal()
         end
         count=count+1
         if not v.collapsed[slotID] and (v.state~="active" or v.limit==0 or count<=v.limit) then
+            displayed=displayed+1
             local itemRow=row; local b=nextRow(); local name,_,_,quality=self.Client.Presentation(row.item)
             local tracked=self.db.pins[tostring(row.item.id)] and " *" or ""
             b.label:SetText("    "..(v.state=="active" and ("#"..count.."  ") or "")..name..tracked)
@@ -544,11 +586,29 @@ function XC:RenderJournal()
             end,button) end)
         end
     end end
-    p.empty:SetShown(not p.slotPickerOpen and not p.destinationPickerOpen and #entries==0)
-    p.empty:SetText(v.state=="removed" and "No removed hunts. Remove hides an item here without deleting its saved notes." or v.state=="completed" and "No obtained items match. Tracking a hunt does not mark it completed." or "No hunts match. Clear search, change filters, choose another equipment slot or add an item.")
-    p.child:SetHeight(math.max(100,y+12))
+    local empty=hasResults and #entries==0
+    p.empty:SetShown(empty)
+    local action
+    if v.state=="removed" then p.empty:SetText("No removed items match.")
+    elseif v.state=="completed" then p.empty:SetText("No obtained items match.")
+    elseif (p.query or "")~="" then
+        p.empty:SetText("No gear matches this search and the current filters."); action="Clear search"
+    elseif sourcesRestricted(v,self.db.options,self.context) then
+        p.empty:SetText("No gear matches your source filters."); action="Show all sources"
+    elseif not self.db.options.showAlternatives then
+        p.empty:SetText("No upgrades found for your spec and level in the catalog."); action="Include alternatives"
+    else p.empty:SetText("No eligible gear found in the catalog for this slot and level.") end
+    p.empty:SetHeight(0); p.empty:SetHeight(p.empty:GetStringHeight())
+    p.emptyAction:SetShown(empty and action~=nil)
+    if empty and action then
+        p.emptyAction.label:SetText(action); W.FitButton(p.emptyAction,135)
+        at(p.emptyAction,8,22+p.empty:GetStringHeight())
+    end
+    local minimumHeight=empty and 22+p.empty:GetHeight()+(action and p.emptyAction:GetHeight()+8 or 0) or 0
+    p.child:SetHeight(math.max(100,y+12,minimumHeight))
     p.status:SetText(p.destinationPickerOpen and "Counts reflect matching gear in the catalog."
         or p.slotPickerOpen and "Choose an equipment slot."
+        or displayed<#entries and string.format("Showing %d of %d matching entries",displayed,#entries)
         or string.format("%d matching %s",#entries,#entries==1 and "item" or "items"))
     if math.abs(p.status:GetHeight()-p.status:GetStringHeight())>.5 or math.abs(p.intro:GetHeight()-p.intro:GetStringHeight())>.5 then
         p:ApplyLayout(); return

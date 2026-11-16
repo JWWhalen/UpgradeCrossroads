@@ -105,34 +105,41 @@ function Rules.SourceAllowed(source,context,options)
     if not options.auction and source.kind=="auction" then return false end
     return true
 end
+function Rules.SourceLane(source)
+    if source.kind=="dungeon" or source.kind=="raid" or source.group then return "dungeon" end
+    if source.kind=="world" then return "world" end
+    return "reliable"
+end
 function Rules.Build(catalog,context,options,slot,profile)
-    local lanes={reliable={},dungeon={},longterm={}}
+    local lanes={reliable={},dungeon={},world={},longterm={}}
     local futureContext={}
     for k,v in pairs(context) do futureContext[k]=v end
     futureContext.level=60
+    futureContext.mainTwoHand=false
+    local requiresOneHand=slot.id==17 and context.mainTwoHand or nil
     local baseline=context.equipped and context.equipped[slot.id]
     local baselineScore=Rules.Score(baseline,profile.weights,slot.id,profile.weaponDpsSlots)
     if not baseline and not (context.occupied and context.occupied[slot.id]) then baselineScore=0 end
     local function insert(lane,item,source,score,minLevel,delta)
-        lanes[lane][#lanes[lane]+1]={item=item,source=source,score=score,delta=delta,baseline=baselineScore,minLevel=minLevel,locked=minLevel>context.level}
+        lanes[lane][#lanes[lane]+1]={item=item,source=source,score=score,delta=delta,
+            baseline=baselineScore,minLevel=minLevel,locked=minLevel>context.level,requiresOneHand=requiresOneHand}
     end
     for _,item in pairs(catalog) do
         if not (context.worn and context.worn[item.id]) and Rules.Usable(item,futureContext,slot) then
             local score=Rules.Score(item,profile.weights,slot.id,profile.weaponDpsSlots)
-            local comparable=baselineScore~=nil
+            local comparable=baselineScore~=nil and not requiresOneHand
             if slot.id==16 and baseline and ((baseline.inv==17)~=(item.inv==17)) then comparable=false end
             if baseline and baseline.incomplete then comparable=false end
             if item.incomplete then comparable=false end
             local delta=comparable and score and score-baselineScore or nil
-            if score and score>0 and (not comparable or delta>0.01) then
+            if score and (options.showAlternatives or (score>0 and (not comparable or delta>0.01))) then
                 local level=Rules.MinimumLevel(item,context,slot)
                 for _,source in ipairs(item.sources or {}) do
                     if Rules.SourceAllowed(source,context,options) then
                         local minLevel=math.max(level,source.minLevel or 0)
                         insert("longterm",item,source,score,minLevel,delta)
                         if minLevel<=context.level then
-                            if source.kind=="dungeon" or source.kind=="raid" or source.group then insert("dungeon",item,source,score,minLevel,delta)
-                            elseif source.kind~="world" then insert("reliable",item,source,score,minLevel,delta) end
+                            insert(Rules.SourceLane(source),item,source,score,minLevel,delta)
                         end
                     end
                 end

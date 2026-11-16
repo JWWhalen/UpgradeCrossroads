@@ -137,7 +137,7 @@ function XC:SavePersonalTarget()
     -- A free-text quest target is not a verified quest-ID lookup.
     if kind=="quest" then source.questID=nil end
     copy.sources={source}; self.db.custom[id]=copy
-    local lane=(kind=="dungeon" or kind=="raid") and "dungeon" or (kind=="world" and "longterm" or "reliable")
+    local lane=self.Rules.SourceLane(source)
     local pin=self:EnsureHunt({item=copy,source=source},lane)
     pin.item=copy; pin.source=source; pin.lane=lane
     self.Client.UpdatePins()

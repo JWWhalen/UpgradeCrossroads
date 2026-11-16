@@ -1,12 +1,12 @@
-UPGRADE CROSSROADS 0.9.0 - START HERE
+UPGRADE CROSSROADS 0.9.1 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.9.0-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.9.1-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.9.0.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.9.1.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW
@@ -66,7 +66,10 @@ Active lists suggestions, Completed records observed ownership, and Removed
 retains hidden suggestions for restoration without deleting their saved notes.
 Click a slot heading to collapse it; the bottom control sets picks per slot.
 Choose All there to browse every matching result without a ten-item cap.
-Use Equipment to select one slot or return to all equipment. The detail pane
+Use Equipment to select one slot, then click Show all gear to see every match.
+Available now includes tradable drops. Under Filters, Reset sources restores
+crafts and group gear. Include alternatives adds comparable lower-scoring gear.
+Off-hand options remain visible with a staff, with the weapon requirement noted. The detail pane
 includes the equipped item's name, stats and score beside the candidate's model
 comparison, with Chat for the equipped item. Filters retain the acquisition
 paths. There is no separate Compare tab.

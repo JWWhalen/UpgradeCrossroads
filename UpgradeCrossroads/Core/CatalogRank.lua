@@ -6,7 +6,7 @@ function XC:CatalogRank(comparison, context, profile)
     if not item or item.randomSuffix or not slotID or not comparison.score or comparison.status == "future"
         or comparison.status == "incomplete" or comparison.status == "unavailable" then return end
     local snapshot = self.Catalog[item.id]
-    if not snapshot or snapshot.inv ~= item.inv then return end
+    if not snapshot or snapshot.suggestedSuffix or snapshot.inv ~= item.inv then return end
     local slot = self:GetSlot(slotID)
     local rules = self.Rules
     local score = rules.Score(snapshot, profile.weights, slotID, profile.weaponDpsSlots)
@@ -24,7 +24,7 @@ function XC:CatalogRank(comparison, context, profile)
         local sources = {faction=context.side == 1 and "alliance" or (context.side == 2 and "horde" or "both"),
             crafted=options.crafted, auction=options.auction, solo=options.solo}
         for id, entry in pairs(self.Catalog) do
-            if rules.Usable(entry, context, slot) and rules.MinimumLevel(entry,context,slot)<=context.level then
+            if not entry.estimatedRoll and rules.Usable(entry, context, slot) and rules.MinimumLevel(entry,context,slot)<=context.level then
                 for _, source in ipairs(entry.sources or {}) do
                     if (source.minLevel or 0) <= context.level and rules.SourceAllowed(source, context, sources) then
                         local value = rules.Score(entry, profile.weights, slotID, profile.weaponDpsSlots)

@@ -15,6 +15,13 @@ C.Safe=safe
 function C.ItemInfo(link)
     return safe(C_Item and C_Item.GetItemInfo or GetItemInfo,link)
 end
+local function matchesSuffix(item,link)
+    if type(link)~="string" or (issecretvalue and issecretvalue(link)) then return false end
+    if tonumber(link:match("|Hitem:(%d+)") or link:match("^item:(%d+)"))~=item.id then return false end
+    local name=link:match("|h%[(.-)%]|h") or C.ItemInfo(link)
+    local suffix=" "..item.suggestedSuffix
+    return type(name)=="string" and name:sub(-#suffix)==suffix
+end
 function C.ItemStats(link,exact)
     local raw=safe(C_Item and C_Item.GetItemStats or GetItemStats,link)
     if type(raw)~="table" then return nil end
@@ -63,15 +70,26 @@ function C.Context(exactInventory)
         local id=safe(GetInventoryItemID,"player",slot.id)
         if link then id=id or tonumber(link:match("item:(%d+)")) end
         if id then
-            ctx.worn[id]=true; ctx.occupied[slot.id]=true
-            local entry
-            if not exactInventory or link then entry=C.ResolveItem(id,exactInventory and link or nil) end
             local snap=XC.Catalog[id]
+            local representative=snap and snap.suggestedSuffix
+            if not representative or matchesSuffix(snap,link) then ctx.worn[id]=true end
+            ctx.occupied[slot.id]=true
+            local entry
+            if exactInventory or representative then
+                if link then entry=C.ResolveItem(id,link) end
+            else entry=C.ResolveItem(id) end
             if exactInventory then
                 ctx.equippedIDs[slot.id]=id
                 if entry and (entry.inv==0 or not entry.classID or not entry.subclassID) then entry=nil end
                 ctx.equipped[slot.id]=entry
                 if not entry or not entry.stats then C.RequestItem(id) end
+            elseif representative then
+                -- A catalog roll describes one possible suffix. Equipment
+                -- comparison must use the wearer's actual link and stats.
+                if entry and entry.stats then
+                    if not next(entry.stats) then entry.incomplete=true end
+                    ctx.equipped[slot.id]=entry
+                else C.RequestItem(id) end
             elseif entry and entry.stats then
                 -- Use the same dated model on both sides when the catalog knows
                 -- the equipped item; mixing live rating units with old percent
@@ -94,14 +112,17 @@ function C.Catalog()
     return catalog
 end
 function C.Presentation(item)
-    local name,link,quality,_,_,_,_,_,_,icon=C.ItemInfo(item.id)
+    local name,link,quality,_,_,_,_,_,_,icon=C.ItemInfo(item.link or item.id)
     if not name then C.RequestItem(item.id) end
-    return name or item.name or ("Item #"..item.id),icon or item.icon or "Interface\\Icons\\INV_Misc_QuestionMark",link or item.link,quality or item.quality or 1
+    name=name or item.name or ("Item #"..item.id)
+    if item.suggestedSuffix then name=name.." "..item.suggestedSuffix end
+    return name,icon or item.icon or "Interface\\Icons\\INV_Misc_QuestionMark",item.link or link,quality or item.quality or 1
 end
 function XC:LinkItem(item)
     if not item then return false end
     local _,_,link=C.Presentation(item)
     if not link then self:Print("Loading this item. Click Chat again in a moment."); return false end
+    if item.suggestedSuffix then link=link.." ("..item.suggestedSuffix..")" end
     local api=ChatFrameUtil or {}
     local active=(ChatEdit_GetActiveWindow and ChatEdit_GetActiveWindow()) or (api.GetActiveWindow and api.GetActiveWindow())
     local insert=ChatEdit_InsertLink or api.InsertLink
@@ -117,13 +138,28 @@ function XC:LinkItem(item)
     self:Print("Open a chat box first, then Shift-click the item.")
     return false
 end
-function C.Owned(id)
+function C.Owned(item)
+    local id=type(item)=="table" and item.id or item
     local count=safe(C_Item and C_Item.GetItemCount or GetItemCount,id,false)
-    return type(count)=="number" and count>0
+    if type(count)~="number" or count<=0 then return false end
+    if type(item)~="table" or not item.suggestedSuffix then return true end
+    for _,slot in ipairs(XC.Slots) do
+        if matchesSuffix(item,safe(GetInventoryItemLink,"player",slot.id)) then return true end
+    end
+    local bags=C_Container
+    if not bags then return false end
+    for bag=0,(NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS or 4) do
+        for slot=1,(safe(bags.GetContainerNumSlots,bag) or 0) do
+            if matchesSuffix(item,safe(bags.GetContainerItemLink,bag,slot)) then return true end
+        end
+    end
+    return false
 end
 function C.UpdatePins()
     for _,pin in pairs(XC.db.pins) do
-        if C.Owned(pin.item.id) and not pin.acquired then pin.acquired=true; pin.acquiredAt=time(); XC:Print("Target obtained: "..pin.item.name) end
+        if not pin.acquired and C.Owned(pin.item) then
+            pin.acquired=true; pin.acquiredAt=time(); XC:Print("Target obtained: "..C.Presentation(pin.item))
+        end
     end
 end
 function XC:GetRecipeSource(source)
@@ -146,7 +182,10 @@ function XC:SourceText(source)
             text=text.."\nRecipe source unverified."
             if source.spellID then text=text.." Crafting spell #"..source.spellID.."." end
         end
-    else text=(source.name or self.KindLabels[source.kind] or "Target").."\n"..(source.zone or source.details or "Source details not supplied") end
+    else
+        text=(source.name or self.KindLabels[source.kind] or "Target").."\n"..(source.zone or source.details or "Source details not supplied")
+        if source.zone and source.details then text=text.."\n"..source.details end
+    end
     if source.side==1 then text=text.."\nAlliance only" elseif source.side==2 then text=text.."\nHorde only" end
     return text
 end
@@ -160,6 +199,7 @@ function XC:Availability(row)
         return "Check quest chain and availability"
     end
     if row.source.kind=="craft" then return "Crafted gear" end
+    if row.source.bindOnEquip then return "Bind on Equip / can be traded" end
     if row.source.kind=="dungeon" or row.source.kind=="raid" then return "Check access, group and loot availability" end
     return "Confirm source requirements"
 end
