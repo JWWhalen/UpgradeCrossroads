@@ -1,12 +1,12 @@
-UPGRADE CROSSROADS 0.9.1 - START HERE
+UPGRADE CROSSROADS 0.9.3 - START HERE
 
 INSTALL
-1. Close WoW completely. Extract UpgradeCrossroads-v0.9.1-forever.zip.
+1. Close WoW completely. Extract UpgradeCrossroads-v0.9.3-forever.zip.
 2. Copy its UpgradeCrossroads folder into your working Interface/AddOns folder,
    replacing the previous files. Keep your WTF folder and saved hunts.
 3. Check: Interface/AddOns/UpgradeCrossroads/UpgradeCrossroads.toc. Core, Data,
    UI and Media must sit directly beside that TOC, without another folder level.
-4. Restart the game, enable the addon and type /uc. /uc status reports v0.9.1.
+4. Restart the game, enable the addon and type /uc. /uc status reports v0.9.3.
 5. Run /uc resetwindows once if you want the new default size and position.
 
 ONE MAIN WINDOW

@@ -1,4 +1,4 @@
-UPGRADE CROSSROADS 0.9.1
+UPGRADE CROSSROADS 0.9.3
 WoW: Forever addon by FlakieGames
 
 INSTALL
@@ -219,7 +219,7 @@ snapshot until a maintained data release replaces it.
 VALIDATION
 The source is syntax-checked and tested in Lua 5.1 with client doubles. Tests
 exercise filters, scoring, class/slot coverage, custom targets, saved hunts,
-ownership changes, UI construction and command/event flows. This v0.9.1 update has
+ownership changes, UI construction and command/event flows. This v0.9.3 update has
 NOT been tested inside the live WoW: Forever client. The included PREVIEW.png
 is an offline rendering of the Lua UI layout with sample data and icon
 placeholders; it is not an in-game screenshot.

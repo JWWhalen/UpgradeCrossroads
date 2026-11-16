@@ -10,12 +10,19 @@ parser=argparse.ArgumentParser()
 parser.add_argument('--tag')
 args=parser.parse_args()
 addon=ROOT/'UpgradeCrossroads'
-toc=(addon/'UpgradeCrossroads.toc').read_text()
+toc_path=addon/'UpgradeCrossroads.toc'
+duplicates=[name for name in (toc_path.name,'Core','Data','UI','Media') if (ROOT/name).exists()]
+if duplicates:
+    parser.error('Install files found at repository root: '+', '.join(duplicates)+'. Use the complete development source tree.')
+toc=toc_path.read_text()
 version=re.search(r'^## Version:\s*(\S+)',toc,re.M).group(1)
 assert re.fullmatch(r'\d+\.\d+\.\d+(?:-[\w.]+)?',version), 'Invalid release version'
 bootstrap=(addon/'Core/Bootstrap.lua').read_text()
-assert f'XC.version = "{version}"' in bootstrap, 'TOC and runtime versions disagree'
-if args.tag: assert args.tag=='v'+version, 'Tag must match TOC version'
+runtime_version=re.search(r'^XC\.version\s*=\s*"([^"]+)"',bootstrap,re.M)
+if not runtime_version or runtime_version.group(1)!=version:
+    parser.error(f'Runtime version {runtime_version.group(1) if runtime_version else "missing"} disagrees with TOC version {version}.')
+if args.tag and args.tag!='v'+version:
+    parser.error(f'Release tag {args.tag} must match {toc_path.relative_to(ROOT)} version v{version}.')
 listed=[]
 for line in toc.splitlines():
     if line and not line.startswith('#'):

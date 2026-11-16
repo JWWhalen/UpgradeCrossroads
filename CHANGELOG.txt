@@ -1,3 +1,8 @@
+v0.9.3
+- Restored the clean development tree and synchronized the release version.
+- Packaging reports copied install files at the repository root and identifies
+  the exact version in a tag or runtime mismatch.
+
 v0.9.1
 - Added 11 tradable gear options for leveling, including six headpieces.
   Bundled World & BoE gear appears in Available now even with personal AH
